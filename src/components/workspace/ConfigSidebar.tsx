@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useFileStore } from '../../store/useFileStore';
-import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock, LayoutGrid, Stamp, Crop, ImageIcon as Image, PencilLine, FilePenLine, Images, ListChecks, FileText, Presentation, Table2, Monitor, MonitorPlay, Check, Type, ChevronDown, ShieldCheck, Archive } from 'lucide-react';
+import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock, LayoutGrid, Stamp, Crop, ImageIcon as Image, PencilLine, FilePenLine, Images, ListChecks, FileText, Presentation, Table2, Monitor, MonitorPlay, Check, Type, ChevronDown, ShieldCheck, Archive, Wrench, Zap } from 'lucide-react';
 import { cn } from '../layout/Navbar';
 import type { PageNumberFont } from '../../services/pdfOperations';
 import { getExcelSheetNames } from '../../services/pdfService';
+import { CropPreviewPanel } from './CropPreviewPanel';
+import { WatermarkPreviewPanel } from './WatermarkPreviewPanel';
 
 type CompressionTier = 'extreme' | 'recommended' | 'low';
 
@@ -194,7 +196,10 @@ export const ConfigSidebar: React.FC = () => {
                 {(['text', 'image'] as const).map((type) => (
                   <button
                     key={type}
-                    onClick={() => setWatermarkOptions({ type })}
+                    onClick={() => setWatermarkOptions({
+                      type,
+                      size: type === 'image' ? Math.min(90, Math.max(5, watermarkOptions.size)) : Math.max(6, watermarkOptions.size),
+                    })}
                     className={cn(
                       "flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
                       watermarkOptions.type === type
@@ -226,6 +231,8 @@ export const ConfigSidebar: React.FC = () => {
                       <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Font Size</label>
                       <input 
                         type="number"
+                        min={6}
+                        max={144}
                         value={watermarkOptions.size}
                         onChange={(e) => setWatermarkOptions({ size: parseInt(e.target.value) || 48 })}
                         className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
@@ -276,10 +283,38 @@ export const ConfigSidebar: React.FC = () => {
                     </div>
                   </div>
                 </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Image Size</label>
+                  <input
+                    type="range"
+                    min="5"
+                    max="90"
+                    step="1"
+                    value={watermarkOptions.size}
+                    onChange={(e) => setWatermarkOptions({ size: parseInt(e.target.value) || 48 })}
+                    className="w-full accent-brand-primary h-1.5 bg-bg-dark/60 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <span className="block text-right text-xs font-mono text-brand-primary">{watermarkOptions.size}%</span>
+                </div>
               </div>
             )}
 
             <div className="flex flex-col gap-6 pt-4 border-t border-border-glass">
+              {watermarkOptions.type === 'text' && (
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Font Family</label>
+                  <select
+                    value={watermarkOptions.font}
+                    onChange={(e) => setWatermarkOptions({ font: e.target.value as PageNumberFont })}
+                    className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm appearance-none cursor-pointer"
+                  >
+                    <option value="helvetica">Helvetica (Standard)</option>
+                    <option value="times-roman">Times Roman</option>
+                    <option value="courier">Courier</option>
+                  </select>
+                </div>
+              )}
+
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Opacity</label>
@@ -312,6 +347,8 @@ export const ConfigSidebar: React.FC = () => {
                 />
               </div>
             </div>
+
+            <WatermarkPreviewPanel file={files[0]} options={watermarkOptions} />
           </div>
         );
       case 'addPageNumbers':
@@ -415,85 +452,6 @@ export const ConfigSidebar: React.FC = () => {
             </div>
           </div>
         );
-      case 'addWatermark':
-        return (
-          <div className="flex flex-col gap-6">
-            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
-              <Stamp className="w-5 h-5 text-brand-primary" />
-              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Watermark</h3>
-            </div>
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Stamp Text</label>
-              <input
-                type="text"
-                value={watermarkOptions.text}
-                onChange={(e) => setWatermarkOptions({ text: e.target.value })}
-                className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary placeholder:text-text-secondary/40 focus:border-brand-primary/50 outline-none transition-all text-sm"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Opacity</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={1}
-                  step={0.05}
-                  value={watermarkOptions.opacity}
-                  onChange={(e) => setWatermarkOptions({ opacity: Number(e.target.value) })}
-                  className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Rotation</label>
-                <input
-                  type="number"
-                  min={0}
-                  max={360}
-                  value={watermarkOptions.rotation}
-                  onChange={(e) => setWatermarkOptions({ rotation: Number(e.target.value) })}
-                  className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Font Family</label>
-                <select
-                  value={watermarkOptions.font}
-                  onChange={(e) => setWatermarkOptions({ font: e.target.value as PageNumberFont })}
-                  className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm appearance-none cursor-pointer"
-                >
-                  <option value="helvetica">Helvetica (Standard)</option>
-                  <option value="times-roman">Times Roman</option>
-                  <option value="courier">Courier</option>
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Size</label>
-                  <input
-                    type="number"
-                    min={6}
-                    max={144}
-                    value={watermarkOptions.size}
-                    onChange={(e) => setWatermarkOptions({ size: Number(e.target.value) })}
-                    className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Color</label>
-                  <input
-                    type="text"
-                    value={watermarkOptions.color}
-                    onChange={(e) => setWatermarkOptions({ color: e.target.value })}
-                    className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm font-mono"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        );
       case 'crop':
         return (
           <div className="flex flex-col gap-6">
@@ -517,6 +475,7 @@ export const ConfigSidebar: React.FC = () => {
                 </div>
               ))}
             </div>
+            <CropPreviewPanel file={files[0]} cropBox={cropBox} />
           </div>
         );
       case 'edit': {

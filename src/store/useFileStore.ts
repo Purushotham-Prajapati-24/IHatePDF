@@ -7,7 +7,8 @@ import {
   JobStatus,
   SelectedPage,
   DonationMilestones,
-  TaskLog
+  TaskLog,
+  PdfPageSize
 } from '../types';
 import type { CompressionTier } from '../services/compressionOptions';
 import type {
@@ -80,7 +81,7 @@ interface FileState {
   setHtmlToPdfOptions: (options: Partial<HtmlToPdfOptions>) => void;
   setPdfToPowerPointOptions: (options: Partial<PdfToPowerPointOptions>) => void;
   updateFileRotation: (id: string, rotation: number) => void;
-  updateFilePreviews: (id: string, previewUrls: string[]) => void;
+  updateFilePreviews: (id: string, previewUrls: string[], pageSizes?: PdfPageSize[]) => void;
   reorderFiles: (startIndex: number, endIndex: number) => void;
   
   // --- Page Actions ---
@@ -278,10 +279,11 @@ export const useFileStore = create<FileState>()(
             file.rotation = rotation;
           }
         }),
-        updateFilePreviews: (id, previewUrls) => set((state) => {
+        updateFilePreviews: (id, previewUrls, pageSizes) => set((state) => {
           const file = state.files.find((f) => f.id === id);
           if (file) {
             file.previewUrls = previewUrls;
+            file.pageSizes = pageSizes;
             file.totalPages = previewUrls.length;
           }
         }),

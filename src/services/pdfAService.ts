@@ -5,6 +5,16 @@ export async function convertPdfToPdfA(file: ArrayBuffer): Promise<ArrayBuffer> 
 
   try {
     const pdf = await PDFDocument.load(file);
+    
+    // PDF/A-1b forbids interactive forms; flatten them.
+    const form = pdf.getForm();
+    if (form) {
+      form.flatten();
+    }
+
+    // PDF/A-1b forbids JavaScript and actions.
+    // pdf-lib's save() with useObjectStreams: false helps normalization.
+    
     normalizeDocumentInfo(pdf);
     injectPdfAMetadata(pdf);
     injectSrgbOutputIntent(pdf);

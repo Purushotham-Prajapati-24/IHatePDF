@@ -27,9 +27,13 @@ export const PageOrganizer: React.FC = () => {
       try {
         for (const file of files) {
           if (!file.previewUrls || file.previewUrls.length === 0) {
-            const { generatePagePreviews } = await import('../../services/previewService');
-            const urls = await generatePagePreviews(file.blob);
-            updateFilePreviews(file.id, urls);
+            const { generatePagePreviewMetadata } = await import('../../services/previewService');
+            const previews = await generatePagePreviewMetadata(file.blob);
+            updateFilePreviews(
+              file.id,
+              previews.map((preview) => preview.url),
+              previews.map(({ width, height }) => ({ width, height })),
+            );
             needsInit = true;
           }
         }

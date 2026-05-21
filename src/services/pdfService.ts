@@ -51,8 +51,10 @@ export function addPageNumbersPDF(file: ArrayBuffer, options: PageNumberOptions)
   return workerPool.runJob('pdf', 'add-page-numbers-pdf', { file, options }, [file]);
 }
 
-export function addWatermarkPDF(file: ArrayBuffer, options: WatermarkOptions): Promise<ArrayBuffer> {
-  return workerPool.runJob('pdf', 'add-watermark-pdf', { file, options }, [file]);
+export async function addWatermarkPDF(file: ArrayBuffer, options: WatermarkOptions): Promise<ArrayBuffer> {
+  const workerOptions = await createWatermarkWorkerOptions(options);
+  const transfer = workerOptions.imageData ? [file, workerOptions.imageData] : [file];
+  return workerPool.runJob('pdf', 'add-watermark-pdf', { file, options: workerOptions }, transfer);
 }
 
 export function cropPDF(file: ArrayBuffer, cropBox: CropBox): Promise<ArrayBuffer> {
@@ -114,4 +116,27 @@ export function pdfToPdfA(file: ArrayBuffer): Promise<ArrayBuffer> {
 
 export function compressPDF(file: ArrayBuffer, tier: CompressionTier = 'recommended'): Promise<ArrayBuffer> {
   return workerPool.runJob('pdf', 'compress-pdf', { file, tier }, [file]);
+}
+
+async function createWatermarkWorkerOptions(options: WatermarkOptions): Promise<WatermarkOptions> {
+  if (options.type !== 'image') {
+    return { ...options, image: null };
+  }
+
+  if (!options.image) {
+    return { ...options, image: null, imageData: null, imageMimeType: null };
+  }
+
+  return {
+    ...options,
+    image: null,
+    imageData: await options.image.arrayBuffer(),
+    imageMimeType: getWatermarkImageMimeType(options.image),
+  };
+}
+
+function getWatermarkImageMimeType(image: Blob): WatermarkOptions['imageMimeType'] {
+  if (image.type === 'image/png') return 'image/png';
+  if (image.type === 'image/jpeg') return 'image/jpeg';
+  return null;
 }

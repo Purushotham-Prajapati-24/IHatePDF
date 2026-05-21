@@ -287,6 +287,10 @@ export function validateToolRequest(request: Pick<ToolExecutionRequest, 'activeT
   if (activeTool === 'unlock' && config.unlockPassword.length === 0) {
     throw new Error('Enter the PDF password before unlocking this file.');
   }
+
+  if (activeTool === 'addWatermark') {
+    assertWatermarkConfig(config.watermarkOptions);
+  }
 }
 
 async function compressWithFallback(
@@ -378,6 +382,31 @@ function assertImageFiles(files: FileMetadata[]): void {
       throw new Error('JPG to PDF accepts only JPG, JPEG, or PNG image files.');
     }
   });
+}
+
+function assertWatermarkConfig(options: WatermarkOptions): void {
+  if ((options.type ?? 'text') === 'text') {
+    if (options.text.trim().length === 0) {
+      throw new Error('Watermark text is required.');
+    }
+    return;
+  }
+
+  if (!options.image) {
+    throw new Error('Choose a PNG or JPG watermark image.');
+  }
+
+  if (getWatermarkImageMimeType(options.image, options.imageName) === null) {
+    throw new Error('Watermark image must be a PNG or JPG file.');
+  }
+}
+
+function getWatermarkImageMimeType(image: Blob, imageName?: string | null): ImageToPdfInput['mimeType'] | null {
+  const name = imageName?.toLowerCase() ?? '';
+
+  if (image.type === 'image/png' || name.endsWith('.png')) return 'image/png';
+  if (image.type === 'image/jpeg' || name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  return null;
 }
 
 function assertSingleDocxFile(files: FileMetadata[]): void {

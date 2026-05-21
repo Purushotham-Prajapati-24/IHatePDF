@@ -39,6 +39,15 @@ export interface WatermarkOptions {
 
 export type JobStatus = 'idle' | 'reading' | 'processing' | 'success' | 'failed' | 'warning';
 
+export interface PdfPageSize {
+  width: number;
+  height: number;
+}
+
+export interface PdfPagePreview extends PdfPageSize {
+  url: string;
+}
+
 export interface FileMetadata {
   id: string;
   name: string;
@@ -46,6 +55,7 @@ export interface FileMetadata {
   type: string;
   blob: Blob;
   previewUrls?: string[]; // Generated canvas previews (object URLs)
+  pageSizes?: PdfPageSize[];
   totalPages?: number;
   rotation?: number;      // Individual page/file rotation: 0, 90, 180, 270
 }

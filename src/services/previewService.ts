@@ -1,4 +1,5 @@
 import { GlobalWorkerOptions, VerbosityLevel, getDocument, type PDFDocumentProxy } from 'pdfjs-dist';
+import type { PdfPagePreview } from '../types';
 
 const PDFJS_WORKER_SRC = '/assets/pdf.worker.min.mjs';
 const PREVIEW_WORKER_URL = '/workers/preview.worker.js';
@@ -12,6 +13,11 @@ export interface PreviewOptions {
 }
 
 export async function generatePagePreviews(file: Blob, options: PreviewOptions = {}): Promise<string[]> {
+  const previews = await generatePagePreviewMetadata(file, options);
+  return previews.map((preview) => preview.url);
+}
+
+export async function generatePagePreviewMetadata(file: Blob, options: PreviewOptions = {}): Promise<PdfPagePreview[]> {
   const data = await file.arrayBuffer();
   const width = options.width ?? DEFAULT_PREVIEW_WIDTH;
 
@@ -30,12 +36,12 @@ export function revokePreviewUrls(urls: string[]) {
   urls.filter((url) => url.startsWith('blob:')).forEach((url) => URL.revokeObjectURL(url));
 }
 
-async function renderPreviewsInWorker(data: ArrayBuffer, width: number): Promise<string[]> {
+async function renderPreviewsInWorker(data: ArrayBuffer, width: number): Promise<PdfPagePreview[]> {
   const worker = new Worker(PREVIEW_WORKER_URL, { type: 'module', name: 'ihatepdf-preview-worker' });
   const jobId = crypto.randomUUID();
 
-  return new Promise<string[]>((resolve, reject) => {
-    worker.onmessage = (event: MessageEvent<{ jobId: string; status: 'success' | 'error'; result?: string[]; error?: string }>) => {
+  return new Promise<PdfPagePreview[]>((resolve, reject) => {
+    worker.onmessage = (event: MessageEvent<{ jobId: string; status: 'success' | 'error'; result?: PdfPagePreview[]; error?: string }>) => {
       if (event.data.jobId !== jobId) {
         return;
       }
@@ -57,11 +63,11 @@ async function renderPreviewsInWorker(data: ArrayBuffer, width: number): Promise
   });
 }
 
-async function renderPreviewsOnMainThread(data: ArrayBuffer, width: number): Promise<string[]> {
+async function renderPreviewsOnMainThread(data: ArrayBuffer, width: number): Promise<PdfPagePreview[]> {
   const pdf = await loadPdf(data);
 
   try {
-    const previews: string[] = [];
+    const previews: PdfPagePreview[] = [];
 
     for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
       previews.push(await renderPagePreview(pdf, pageNumber, width));
@@ -89,7 +95,7 @@ async function renderPagePreview(
   pdf: PDFDocumentProxy,
   pageNumber: number,
   targetWidth: number,
-): Promise<string> {
+): Promise<PdfPagePreview> {
   const page = await pdf.getPage(pageNumber);
   const viewport = page.getViewport({ scale: 1 });
   const scale = targetWidth / viewport.width;
@@ -110,5 +116,9 @@ async function renderPagePreview(
   }).promise;
 
   page.cleanup();
-  return canvas.toDataURL(OUTPUT_MIME_TYPE);
+  return {
+    url: canvas.toDataURL(OUTPUT_MIME_TYPE),
+    width: viewport.width,
+    height: viewport.height,
+  };
 }

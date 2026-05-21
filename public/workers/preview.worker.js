@@ -69,7 +69,11 @@ async function renderPreview(pdf, pageNumber, targetWidth = 240) {
   page.cleanup();
 
   const blob = await canvas.convertToBlob({ type: OUTPUT_MIME_TYPE });
-  return new FileReaderSync().readAsDataURL(blob);
+  return {
+    url: new FileReaderSync().readAsDataURL(blob),
+    width: viewport.width,
+    height: viewport.height,
+  };
 }
 
 async function loadPdfJs() {

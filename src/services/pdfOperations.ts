@@ -38,6 +38,8 @@ export interface WatermarkOptions {
   text: string;
   image?: Blob | null;
   imageName?: string | null;
+  imageData?: ArrayBuffer | null;
+  imageMimeType?: ImageToPdfMimeType | null;
   opacity: number;
   rotation: number;
   font: PageNumberFont;
@@ -228,7 +230,7 @@ export async function addPageNumbersToPdfBuffer(file: ArrayBuffer, options: Page
 
 export async function addWatermarkToPdfBuffer(file: ArrayBuffer, options: WatermarkOptions): Promise<ArrayBuffer> {
   assertRepairableInput(file);
-  assertWatermarkOptions(options);
+  const watermarkOptions = assertWatermarkOptions(options);
   const pdf = await PDFDocument.load(file);
   const pages = pdf.getPages();
 
@@ -236,10 +238,15 @@ export async function addWatermarkToPdfBuffer(file: ArrayBuffer, options: Waterm
     throw new Error('Cannot add a watermark to a PDF with no pages.');
   }
 
-  const font = await pdf.embedFont(getStandardFont(options.font));
-  const color = parseHexColor(options.color);
+  if (watermarkOptions.type === 'image') {
+    const image = await embedWatermarkImage(pdf, watermarkOptions);
+    pages.forEach((page) => drawCenteredImageWatermark(page, watermarkOptions, image));
+  } else {
+    const font = await pdf.embedFont(getStandardFont(watermarkOptions.font));
+    const color = parseHexColor(watermarkOptions.color);
 
-  pages.forEach((page) => drawCenteredWatermark(page, options, font, color));
+    pages.forEach((page) => drawCenteredTextWatermark(page, watermarkOptions, font, color));
+  }
 
   return toExactArrayBuffer(await pdf.save());
 }
@@ -374,9 +381,9 @@ function calculatePageNumberPosition(
   return { x: horizontal, y };
 }
 
-function drawCenteredWatermark(
+function drawCenteredTextWatermark(
   page: ReturnType<PDFDocument['getPages']>[number],
-  options: WatermarkOptions,
+  options: Required<Pick<WatermarkOptions, 'text' | 'opacity' | 'rotation' | 'size'>>,
   font: PDFFont,
   color: ReturnType<typeof rgb>,
 ): void {
@@ -393,6 +400,40 @@ function drawCenteredWatermark(
     opacity: options.opacity,
     rotate: degrees(normalizeRotation(options.rotation)),
   });
+}
+
+function drawCenteredImageWatermark(
+  page: ReturnType<PDFDocument['getPages']>[number],
+  options: Required<Pick<WatermarkOptions, 'opacity' | 'rotation' | 'size'>>,
+  image: PDFImage,
+): void {
+  const { width, height } = page.getSize();
+  const maxWidth = width * (options.size / 100);
+  const maxHeight = height * 0.9;
+  const scale = Math.min(maxWidth / image.width, maxHeight / image.height);
+  const imageWidth = image.width * scale;
+  const imageHeight = image.height * scale;
+
+  page.drawImage(image, {
+    x: (width - imageWidth) / 2,
+    y: (height - imageHeight) / 2,
+    width: imageWidth,
+    height: imageHeight,
+    opacity: options.opacity,
+    rotate: degrees(normalizeRotation(options.rotation)),
+  });
+}
+
+async function embedWatermarkImage(pdf: PDFDocument, options: WatermarkOptions): Promise<PDFImage> {
+  const data = options.imageData;
+
+  if (!(data instanceof ArrayBuffer) || data.byteLength === 0) {
+    throw new Error('Choose a PNG or JPG watermark image.');
+  }
+
+  if (options.imageMimeType === 'image/png') return pdf.embedPng(data);
+  if (options.imageMimeType === 'image/jpeg') return pdf.embedJpg(data);
+  throw new Error('Watermark image must be a PNG or JPG file.');
 }
 
 function drawEditAnnotation(
@@ -554,18 +595,31 @@ function assertPageNumberOptions(options: PageNumberOptions): void {
   }
 }
 
-function assertWatermarkOptions(options: WatermarkOptions): void {
-  if (options.text.trim().length === 0) {
+function assertWatermarkOptions(options: WatermarkOptions): WatermarkOptions {
+  const type = options.type ?? 'text';
+
+  if (type === 'text' && options.text.trim().length === 0) {
     throw new Error('Watermark text is required.');
+  }
+
+  if (type === 'image' && !(options.imageData instanceof ArrayBuffer)) {
+    throw new Error('Choose a PNG or JPG watermark image.');
   }
 
   if (!Number.isFinite(options.opacity) || options.opacity < 0 || options.opacity > 1) {
     throw new Error('Watermark opacity must be between 0 and 1.');
   }
 
-  if (!Number.isFinite(options.size) || options.size < 6 || options.size > 144) {
-    throw new Error('Watermark size must be between 6 and 144 points.');
+  const minSize = type === 'image' ? 5 : 6;
+  const maxSize = type === 'image' ? 90 : 144;
+
+  if (!Number.isFinite(options.size) || options.size < minSize || options.size > maxSize) {
+    throw new Error(type === 'image'
+      ? 'Watermark image size must be between 5 and 90 percent.'
+      : 'Watermark size must be between 6 and 144 points.');
   }
+
+  return { ...options, type };
 }
 
 function assertCropBox(cropBox: CropBox, pageSize: { width: number; height: number }): CropBox {
