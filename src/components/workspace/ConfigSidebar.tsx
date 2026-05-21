@@ -1,7 +1,8 @@
 import React from 'react';
 import { useFileStore } from '../../store/useFileStore';
-import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock } from 'lucide-react';
+import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock, LayoutGrid, Stamp, Crop, ImageIcon as Image, PencilLine, FilePenLine, Images } from 'lucide-react';
 import { cn } from '../layout/Navbar';
+import type { PageNumberFont } from '../../services/pdfOperations';
 
 type CompressionTier = 'extreme' | 'recommended' | 'low';
 
@@ -28,18 +29,550 @@ export const ConfigSidebar: React.FC = () => {
     protectPassword,
     protectConfirmPassword,
     unlockPassword,
+    pageNumberOptions,
+    watermarkOptions,
+    cropBox,
+    editAnnotations,
+    formFillOptions,
+    imageToPdfOptions,
     setCompressionTier,
     setSplitRangeInput,
     setOcrLanguage,
     setProtectPassword,
     setProtectConfirmPassword,
     setUnlockPassword,
+    setPageNumberOptions,
+    setWatermarkOptions,
+    setCropBox,
+    setEditAnnotations,
+    setFormFillOptions,
+    setImageToPdfOptions,
   } = useFileStore();
 
   if (!activeTool) return null;
 
   const renderToolConfigs = () => {
     switch (activeTool) {
+      case 'addWatermark':
+        return (
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+                <Settings className="w-5 h-5 text-brand-primary" />
+                <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Watermark Type</h3>
+              </div>
+              <div className="flex p-1 bg-bg-dark/40 rounded-xl border border-border-glass">
+                {(['text', 'image'] as const).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setWatermarkOptions({ type })}
+                    className={cn(
+                      "flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                      watermarkOptions.type === type
+                        ? "bg-brand-primary text-white shadow-lg"
+                        : "text-text-secondary hover:text-text-primary"
+                    )}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {watermarkOptions.type === 'text' ? (
+              <div className="flex flex-col gap-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Watermark Text</label>
+                    <input 
+                      type="text"
+                      value={watermarkOptions.text}
+                      onChange={(e) => setWatermarkOptions({ text: e.target.value })}
+                      className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary placeholder:text-text-secondary/40 focus:border-brand-primary/50 outline-none transition-all text-sm"
+                      placeholder="e.g. CONFIDENTIAL"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Font Size</label>
+                      <input 
+                        type="number"
+                        value={watermarkOptions.size}
+                        onChange={(e) => setWatermarkOptions({ size: parseInt(e.target.value) || 48 })}
+                        className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Color</label>
+                      <div className="relative">
+                        <input 
+                          type="text"
+                          value={watermarkOptions.color}
+                          onChange={(e) => setWatermarkOptions({ color: e.target.value })}
+                          className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm font-mono"
+                        />
+                        <div 
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md border border-white/10"
+                          style={{ backgroundColor: watermarkOptions.color }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Stamp Image</label>
+                  <div className="relative group">
+                    <input 
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setWatermarkOptions({ 
+                            image: file,
+                            imageName: file.name
+                          });
+                        }
+                      }}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div className="w-full p-8 rounded-xl border-2 border-dashed border-border-glass bg-bg-dark/20 group-hover:border-brand-primary/50 transition-all flex flex-col items-center gap-2 text-center">
+                      <Image className="w-8 h-8 text-text-secondary group-hover:text-brand-primary transition-colors" />
+                      <span className="text-[10px] font-bold text-text-secondary uppercase tracking-wider">
+                        {watermarkOptions.imageName || 'Choose Image'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-6 pt-4 border-t border-border-glass">
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Opacity</label>
+                  <span className="text-xs font-mono text-brand-primary">{Math.round(watermarkOptions.opacity * 100)}%</span>
+                </div>
+                <input 
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  value={watermarkOptions.opacity}
+                  onChange={(e) => setWatermarkOptions({ opacity: parseFloat(e.target.value) })}
+                  className="w-full accent-brand-primary h-1.5 bg-bg-dark/60 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Rotation</label>
+                  <span className="text-xs font-mono text-brand-primary">{watermarkOptions.rotation}°</span>
+                </div>
+                <input 
+                  type="range"
+                  min="0"
+                  max="360"
+                  step="1"
+                  value={watermarkOptions.rotation}
+                  onChange={(e) => setWatermarkOptions({ rotation: parseInt(e.target.value) })}
+                  className="w-full accent-brand-primary h-1.5 bg-bg-dark/60 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        );
+      case 'addPageNumbers':
+        return (
+          <div className="flex flex-col gap-8">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+                <LayoutGrid className="w-5 h-5 text-brand-primary" />
+                <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Position</h3>
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {(['top-left', 'top-center', 'top-right', 'bottom-left', 'bottom-center', 'bottom-right'] as const).map((pos) => (
+                  <button
+                    key={pos}
+                    onClick={() => setPageNumberOptions({ position: pos })}
+                    className={cn(
+                      "h-10 rounded-lg border-2 transition-all flex items-center justify-center",
+                      pageNumberOptions.position === pos
+                        ? "border-brand-primary bg-brand-primary/10"
+                        : "border-border-glass bg-bg-dark/20 hover:border-brand-primary/30"
+                    )}
+                    title={pos.replace('-', ' ')}
+                  >
+                    <div className={cn(
+                      "w-2 h-2 rounded-full",
+                      pageNumberOptions.position === pos ? "bg-brand-primary" : "bg-text-secondary/40"
+                    )} />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+                <ScanText className="w-5 h-5 text-brand-primary" />
+                <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Formatting</h3>
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Text Template</label>
+                <input 
+                  type="text"
+                  value={pageNumberOptions.format}
+                  onChange={(e) => setPageNumberOptions({ format: e.target.value })}
+                  className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary placeholder:text-text-secondary/40 focus:border-brand-primary/50 outline-none transition-all text-sm font-mono"
+                  placeholder="e.g. Page {n} of {total}"
+                />
+                <p className="text-[10px] text-text-secondary/60 leading-relaxed italic">
+                  Use {'{n}'} for page number and {'{total}'} for total pages.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+                <Settings className="w-5 h-5 text-brand-primary" />
+                <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Typography</h3>
+              </div>
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Font Family</label>
+                  <select
+                    value={pageNumberOptions.font}
+                    onChange={(e) => setPageNumberOptions({ font: e.target.value as PageNumberFont })}
+                    className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm appearance-none cursor-pointer"
+                  >
+                    <option value="helvetica">Helvetica (Standard)</option>
+                    <option value="times-roman">Times Roman</option>
+                    <option value="courier">Courier</option>
+                  </select>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Font Size</label>
+                    <input 
+                      type="number"
+                      min={6}
+                      max={72}
+                      value={pageNumberOptions.size}
+                      onChange={(e) => setPageNumberOptions({ size: parseInt(e.target.value) || 12 })}
+                      className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Color (Hex)</label>
+                    <div className="relative">
+                      <input 
+                        type="text"
+                        value={pageNumberOptions.color}
+                        onChange={(e) => setPageNumberOptions({ color: e.target.value })}
+                        className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm font-mono"
+                      />
+                      <div 
+                        className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-md border border-white/10 shadow-sm"
+                        style={{ backgroundColor: pageNumberOptions.color }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'addWatermark':
+        return (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Stamp className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Watermark</h3>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Stamp Text</label>
+              <input
+                type="text"
+                value={watermarkOptions.text}
+                onChange={(e) => setWatermarkOptions({ text: e.target.value })}
+                className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary placeholder:text-text-secondary/40 focus:border-brand-primary/50 outline-none transition-all text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Opacity</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={watermarkOptions.opacity}
+                  onChange={(e) => setWatermarkOptions({ opacity: Number(e.target.value) })}
+                  className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Rotation</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={360}
+                  value={watermarkOptions.rotation}
+                  onChange={(e) => setWatermarkOptions({ rotation: Number(e.target.value) })}
+                  className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Font Family</label>
+                <select
+                  value={watermarkOptions.font}
+                  onChange={(e) => setWatermarkOptions({ font: e.target.value as PageNumberFont })}
+                  className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm appearance-none cursor-pointer"
+                >
+                  <option value="helvetica">Helvetica (Standard)</option>
+                  <option value="times-roman">Times Roman</option>
+                  <option value="courier">Courier</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Size</label>
+                  <input
+                    type="number"
+                    min={6}
+                    max={144}
+                    value={watermarkOptions.size}
+                    onChange={(e) => setWatermarkOptions({ size: Number(e.target.value) })}
+                    className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Color</label>
+                  <input
+                    type="text"
+                    value={watermarkOptions.color}
+                    onChange={(e) => setWatermarkOptions({ color: e.target.value })}
+                    className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm font-mono"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      case 'crop':
+        return (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Crop className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Crop Bounds</h3>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {(['x', 'y', 'width', 'height'] as const).map((field) => (
+                <div key={field} className="space-y-2">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">
+                    {field}
+                  </label>
+                  <input
+                    type="number"
+                    min={field === 'width' || field === 'height' ? 1 : 0}
+                    value={cropBox[field]}
+                    onChange={(event) => setCropBox({ [field]: Number(event.target.value) })}
+                    className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'edit': {
+        const annotation = editAnnotations[0];
+
+        if (!annotation || annotation.type !== 'text') {
+          return (
+            <div className="flex flex-col items-center justify-center p-12 text-center gap-4 opacity-40">
+              <PencilLine className="w-12 h-12 text-text-secondary" />
+              <p className="text-xs font-bold text-text-secondary uppercase tracking-widest">Canvas Editor Ready</p>
+            </div>
+          );
+        }
+
+        return (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <PencilLine className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Text Annotation</h3>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Text</label>
+              <input
+                type="text"
+                value={annotation.text}
+                onChange={(event) => setEditAnnotations([{ ...annotation, text: event.target.value }])}
+                className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              {(['x', 'y', 'size'] as const).map((field) => (
+                <div key={field} className="space-y-2">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">{field}</label>
+                  <input
+                    type="number"
+                    min={field === 'size' ? 1 : 0}
+                    value={annotation[field]}
+                    onChange={(event) => setEditAnnotations([{ ...annotation, [field]: Number(event.target.value) }])}
+                    className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Color</label>
+              <input
+                type="text"
+                value={annotation.color}
+                onChange={(event) => setEditAnnotations([{ ...annotation, color: event.target.value }])}
+                className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm font-mono"
+              />
+            </div>
+          </div>
+        );
+      }
+      case 'forms': {
+        const field = formFillOptions.fields[0] ?? { name: '', value: '' };
+
+        return (
+          <div className="flex flex-col gap-6">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <FilePenLine className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Form Field</h3>
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Field Name</label>
+              <input
+                type="text"
+                value={field.name}
+                onChange={(event) => setFormFillOptions({ ...formFillOptions, fields: [{ ...field, name: event.target.value }] })}
+                className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Value</label>
+              <input
+                type="text"
+                value={String(field.value)}
+                onChange={(event) => setFormFillOptions({ ...formFillOptions, fields: [{ ...field, value: event.target.value }] })}
+                className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary focus:border-brand-primary/50 outline-none transition-all text-sm"
+              />
+            </div>
+            <label className="flex items-center gap-3 rounded-xl border border-border-glass bg-bg-dark/20 p-4 text-sm font-bold text-text-primary">
+              <input
+                type="checkbox"
+                checked={formFillOptions.flatten}
+                onChange={(event) => setFormFillOptions({ ...formFillOptions, flatten: event.target.checked })}
+                className="h-4 w-4 accent-brand-primary"
+              />
+              Flatten fields into page content
+            </label>
+          </div>
+        );
+      }
+      case 'jpgToPdf':
+        return (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Images className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Page Layout</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Page Size</label>
+                <div className="flex p-1 bg-bg-dark/40 rounded-xl border border-border-glass">
+                  {(['image', 'a4'] as const).map((pageSize) => (
+                    <button
+                      key={pageSize}
+                      onClick={() => setImageToPdfOptions({ pageSize })}
+                      className={cn(
+                        "flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                        imageToPdfOptions.pageSize === pageSize
+                          ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
+                          : "text-text-secondary hover:text-text-primary"
+                      )}
+                    >
+                      {pageSize === 'image' ? 'Image Size' : 'A4 Fit'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {imageToPdfOptions.pageSize === 'a4' && (
+                <div className="space-y-2 animate-in fade-in zoom-in-95 duration-200">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Orientation</label>
+                  <div className="flex p-1 bg-bg-dark/40 rounded-xl border border-border-glass">
+                    {(['portrait', 'landscape'] as const).map((orientation) => (
+                      <button
+                        key={orientation}
+                        onClick={() => setImageToPdfOptions({ orientation })}
+                        className={cn(
+                          "flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                          imageToPdfOptions.orientation === orientation
+                            ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
+                            : "text-text-secondary hover:text-text-primary"
+                        )}
+                      >
+                        {orientation}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-end">
+                  <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Margin</label>
+                  <span className="text-[10px] font-mono text-brand-primary">{imageToPdfOptions.margin}pt</span>
+                </div>
+                <input
+                  type="number"
+                  min={0}
+                  max={200}
+                  value={imageToPdfOptions.margin}
+                  disabled={imageToPdfOptions.pageSize === 'image'}
+                  onChange={(event) => setImageToPdfOptions({ margin: Number(event.target.value) })}
+                  className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary disabled:opacity-20 focus:border-brand-primary/50 outline-none transition-all text-sm font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-brand-primary/5 border border-brand-primary/10">
+              <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight">
+                {imageToPdfOptions.pageSize === 'image' 
+                  ? "Images will be embedded as full pages preserving their original dimensions and quality."
+                  : `Images will be fitted onto ${imageToPdfOptions.orientation} A4 pages with centered alignment.`}
+              </p>
+            </div>
+          </div>
+        );
+      case 'wordToPdf':
+        return (
+          <div className="flex flex-col items-center justify-center p-12 text-center gap-4 opacity-60">
+            <Settings className="w-12 h-12 text-text-secondary" />
+            <p className="text-xs font-bold text-text-secondary uppercase tracking-widest">DOCX Layout Auto-Detected</p>
+          </div>
+        );
+      case 'powerPointToPdf':
+        return (
+          <div className="flex flex-col items-center justify-center p-12 text-center gap-4 opacity-60">
+            <Settings className="w-12 h-12 text-text-secondary" />
+            <p className="text-xs font-bold text-text-secondary uppercase tracking-widest">Slides Render as Landscape Pages</p>
+          </div>
+        );
       case 'compress':
         return (
           <div className="flex flex-col gap-6">

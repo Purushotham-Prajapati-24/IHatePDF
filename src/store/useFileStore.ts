@@ -10,6 +10,7 @@ import {
   TaskLog
 } from '../types';
 import type { CompressionTier } from '../services/compressionOptions';
+import type { CropBox, ImageToPdfOptions, PageNumberOptions, PdfEditAnnotation, PdfFormFillOptions, WatermarkOptions } from '../services/pdfOperations';
 import { processActiveTool, validateToolRequest } from '../services/toolProcessor';
 import { saveFileToBuffer, saveTaskLog } from '../db/localDb';
 
@@ -29,6 +30,12 @@ interface FileState {
   protectPassword: string;
   protectConfirmPassword: string;
   unlockPassword: string;
+  pageNumberOptions: PageNumberOptions;
+  watermarkOptions: WatermarkOptions;
+  cropBox: CropBox;
+  editAnnotations: PdfEditAnnotation[];
+  formFillOptions: PdfFormFillOptions;
+  imageToPdfOptions: ImageToPdfOptions;
   
   // --- Page Organizer Specific State ---
   selectedPages: SelectedPage[]; // Used for split or visual re-ordering grid
@@ -50,6 +57,12 @@ interface FileState {
   setProtectPassword: (password: string) => void;
   setProtectConfirmPassword: (password: string) => void;
   setUnlockPassword: (password: string) => void;
+  setPageNumberOptions: (options: Partial<PageNumberOptions>) => void;
+  setWatermarkOptions: (options: Partial<WatermarkOptions>) => void;
+  setCropBox: (cropBox: Partial<CropBox>) => void;
+  setEditAnnotations: (annotations: PdfEditAnnotation[]) => void;
+  setFormFillOptions: (options: PdfFormFillOptions) => void;
+  setImageToPdfOptions: (options: Partial<ImageToPdfOptions>) => void;
   updateFileRotation: (id: string, rotation: number) => void;
   updateFilePreviews: (id: string, previewUrls: string[]) => void;
   reorderFiles: (startIndex: number, endIndex: number) => void;
@@ -104,6 +117,51 @@ export const useFileStore = create<FileState>()(
         protectPassword: '',
         protectConfirmPassword: '',
         unlockPassword: '',
+        pageNumberOptions: {
+          position: 'bottom-right',
+          format: 'Page {n} of {total}',
+          font: 'helvetica',
+          color: '#111111',
+          size: 12,
+          margin: 36,
+        },
+        watermarkOptions: {
+          type: 'text',
+          text: 'CONFIDENTIAL',
+          image: null,
+          imageName: null,
+          opacity: 0.3,
+          rotation: 45,
+          font: 'helvetica',
+          color: '#111111',
+          size: 48,
+        },
+        cropBox: {
+          x: 0,
+          y: 0,
+          width: 300,
+          height: 300,
+        },
+        editAnnotations: [{
+          type: 'text',
+          pageIndex: 0,
+          viewportWidth: 300,
+          viewportHeight: 300,
+          x: 36,
+          y: 36,
+          text: 'CONFIDENTIAL',
+          size: 18,
+          color: '#111111',
+        }],
+        formFillOptions: {
+          fields: [{ name: '', value: '' }],
+          flatten: true,
+        },
+        imageToPdfOptions: {
+          pageSize: 'image',
+          orientation: 'portrait',
+          margin: 0,
+        },
         selectedPages: [],
         donationStats: {
           totalTasksCompleted: 0,
@@ -155,6 +213,24 @@ export const useFileStore = create<FileState>()(
         }),
         setUnlockPassword: (password) => set((state) => {
           state.unlockPassword = password;
+        }),
+        setPageNumberOptions: (options) => set((state) => {
+          state.pageNumberOptions = { ...state.pageNumberOptions, ...options };
+        }),
+        setWatermarkOptions: (options) => set((state) => {
+          state.watermarkOptions = { ...state.watermarkOptions, ...options };
+        }),
+        setCropBox: (cropBox) => set((state) => {
+          state.cropBox = { ...state.cropBox, ...cropBox };
+        }),
+        setEditAnnotations: (annotations) => set((state) => {
+          state.editAnnotations = annotations;
+        }),
+        setFormFillOptions: (options) => set((state) => {
+          state.formFillOptions = options;
+        }),
+        setImageToPdfOptions: (options) => set((state) => {
+          state.imageToPdfOptions = { ...state.imageToPdfOptions, ...options };
         }),
         updateFileRotation: (id, rotation) => set((state) => {
           const file = state.files.find((f) => f.id === id);
@@ -220,6 +296,12 @@ export const useFileStore = create<FileState>()(
             protectPassword: snapshot.protectPassword,
             protectConfirmPassword: snapshot.protectConfirmPassword,
             unlockPassword: snapshot.unlockPassword,
+            pageNumberOptions: snapshot.pageNumberOptions,
+            watermarkOptions: snapshot.watermarkOptions,
+            cropBox: snapshot.cropBox,
+            editAnnotations: snapshot.editAnnotations,
+            formFillOptions: snapshot.formFillOptions,
+            imageToPdfOptions: snapshot.imageToPdfOptions,
           };
 
           try {
@@ -272,6 +354,12 @@ export const useFileStore = create<FileState>()(
                 protectPassword: get().protectPassword,
                 protectConfirmPassword: get().protectConfirmPassword,
                 unlockPassword: get().unlockPassword,
+                pageNumberOptions: get().pageNumberOptions,
+                watermarkOptions: get().watermarkOptions,
+                cropBox: get().cropBox,
+                editAnnotations: get().editAnnotations,
+                formFillOptions: get().formFillOptions,
+                imageToPdfOptions: get().imageToPdfOptions,
               },
             });
 
@@ -288,16 +376,6 @@ export const useFileStore = create<FileState>()(
 
             const jobId = crypto.randomUUID();
 
-            // 1. Persistence - Save to History Grid (file_buffer)
-            await saveFileToBuffer({
-              id: jobId,
-              name: outputFileName,
-              size: totalProcessedSize,
-              blob: processedBlob,
-              timestamp: endTime,
-            });
-
-            // 2. Persistence - Save to Transparency Ledger (history_logs)
             const taskLog: TaskLog = {
               id: jobId,
               timestamp: endTime,
@@ -309,9 +387,20 @@ export const useFileStore = create<FileState>()(
               bandwidthSavedBytes,
               timeSavedSeconds,
             };
-            await saveTaskLog(taskLog);
 
-            // 3. Update Global UI Metrics
+            try {
+              await saveFileToBuffer({
+                id: jobId,
+                name: outputFileName,
+                size: totalProcessedSize,
+                blob: processedBlob,
+                timestamp: endTime,
+              });
+              await saveTaskLog(taskLog);
+            } catch {
+              // Processing output must remain downloadable even if local history storage is unavailable.
+            }
+
             await get().incrementCompletedTasks(taskLog);
 
             set((state) => {

@@ -11,7 +11,16 @@ import {
   Search,
   ArrowRight,
   ShieldCheck,
-  Zap
+  Zap,
+  Wrench,
+  ListOrdered,
+  Stamp,
+  Crop,
+  PencilLine,
+  FilePenLine,
+  Images,
+  FileText,
+  Presentation
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../components/layout/Navbar';
@@ -32,6 +41,15 @@ const tools: Tool[] = [
   { id: 'organize', title: 'Organize PDF', description: 'Sort, duplicate, and delete PDF pages with an interactive canvas.', icon: LayoutGrid },
   { id: 'protect', title: 'Protect PDF', description: 'Add a secure password and encrypt your PDF file locally.', icon: Lock },
   { id: 'unlock', title: 'Unlock PDF', description: 'Remove password security from your PDF for easy access.', icon: Unlock },
+  { id: 'repair', title: 'Repair PDF', description: 'Rebuild damaged PDF structure and recover readable documents locally.', icon: Wrench },
+  { id: 'addPageNumbers', title: 'Add Page Numbers', description: 'Overlay customizable page numbers onto each page of your PDF document.', icon: ListOrdered },
+  { id: 'addWatermark', title: 'Add Watermark', description: 'Stamp semi-transparent rotated text across every PDF page locally.', icon: Stamp },
+  { id: 'crop', title: 'Crop PDF', description: 'Clip PDF pages to exact local point bounds without uploading files.', icon: Crop },
+  { id: 'edit', title: 'Edit PDF', description: 'Burn text, rectangles, and freehand vector annotations into PDF pages.', icon: PencilLine },
+  { id: 'forms', title: 'PDF Forms', description: 'Fill and flatten interactive PDF form fields directly in the browser.', icon: FilePenLine },
+  { id: 'jpgToPdf', title: 'JPG to PDF', description: 'Convert JPG and PNG images into ordered PDF pages locally.', icon: Images },
+  { id: 'wordToPdf', title: 'Word to PDF', description: 'Convert DOCX documents into paginated PDFs without uploading files.', icon: FileText },
+  { id: 'powerPointToPdf', title: 'PowerPoint to PDF', description: 'Convert PPTX slides into landscape PDF pages locally.', icon: Presentation },
 ];
 
 export const Home: React.FC = () => {

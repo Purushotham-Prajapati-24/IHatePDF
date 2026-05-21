@@ -4,6 +4,26 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  build: {
+    chunkSizeWarningLimit: 2200,
+    rollupOptions: {
+      onwarn(warning, warn) {
+        const message = warning.message ?? '';
+
+        if (
+          message.includes('qpdf-wasm-esm-embedded') && message.includes('externalized for browser compatibility')
+        ) {
+          return;
+        }
+
+        if (message.includes('INEFFECTIVE_DYNAMIC_IMPORT')) {
+          return;
+        }
+
+        warn(warning);
+      },
+    },
+  },
   plugins: [
     react(),
     tailwindcss(),

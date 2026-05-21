@@ -8,6 +8,7 @@ import { cn } from '../layout/Navbar';
 export const DropZone: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);
   const addFiles = useFileStore((state) => state.addFiles);
+  const activeTool = useFileStore((state) => state.activeTool);
 
   useEffect(() => {
     const handleDragOver = (e: DragEvent) => {
@@ -47,12 +48,12 @@ export const DropZone: React.FC = () => {
       let rejectedCount = 0;
 
       files.forEach((file) => {
-        if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        if (isAcceptedFile(file, activeTool)) {
           validFiles.push({
             id: crypto.randomUUID(),
             name: file.name,
             size: file.size,
-            type: file.type || 'application/pdf',
+            type: file.type || getFallbackMimeType(file),
             blob: file,
             rotation: 0
           });
@@ -62,12 +63,12 @@ export const DropZone: React.FC = () => {
       });
 
       if (rejectedCount > 0) {
-        toast.error(`Rejected ${rejectedCount} file(s). Only PDF files are supported.`);
+        toast.error(`Rejected ${rejectedCount} file(s). ${getAcceptedFileMessage(activeTool)}`);
       }
 
       if (validFiles.length > 0) {
         addFiles(validFiles);
-        toast.success(`Added ${validFiles.length} PDF file(s) to workspace.`);
+        toast.success(`Added ${validFiles.length} file(s) to workspace.`);
       }
     };
 
@@ -82,7 +83,7 @@ export const DropZone: React.FC = () => {
       window.removeEventListener('dragleave', handleDragLeave);
       window.removeEventListener('drop', handleDrop);
     };
-  }, [addFiles]);
+  }, [activeTool, addFiles]);
 
   if (!isDragging) return null;
 
@@ -93,7 +94,7 @@ export const DropZone: React.FC = () => {
           <UploadCloud className="w-12 h-12 text-brand-primary" />
         </div>
         <h2 className="text-4xl font-outfit font-black text-text-primary tracking-tight mb-2">
-          Drop PDF Files Here
+          Drop Files Here
         </h2>
         <p className="text-xl text-brand-primary/80 font-semibold">
           Your files never leave your device
@@ -102,3 +103,40 @@ export const DropZone: React.FC = () => {
     </div>
   );
 };
+
+function isAcceptedFile(file: File, activeTool: string | null): boolean {
+  const name = file.name.toLowerCase();
+
+  if (activeTool === 'jpgToPdf') {
+    return file.type === 'image/png' || file.type === 'image/jpeg' || /\.(png|jpe?g)$/i.test(name);
+  }
+
+  if (activeTool === 'wordToPdf') {
+    return file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      || name.endsWith('.docx');
+  }
+
+  if (activeTool === 'powerPointToPdf') {
+    return file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+      || name.endsWith('.pptx');
+  }
+
+  return file.type === 'application/pdf' || name.endsWith('.pdf');
+}
+
+function getAcceptedFileMessage(activeTool: string | null): string {
+  if (activeTool === 'jpgToPdf') return 'Only JPG, JPEG, and PNG files are supported.';
+  if (activeTool === 'wordToPdf') return 'Only DOCX files are supported.';
+  if (activeTool === 'powerPointToPdf') return 'Only PPTX files are supported.';
+  return 'Only PDF files are supported.';
+}
+
+function getFallbackMimeType(file: File): string {
+  const name = file.name.toLowerCase();
+
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  if (name.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (name.endsWith('.pptx')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  return 'application/pdf';
+}

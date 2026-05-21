@@ -1,6 +1,7 @@
 import type { FileMetadata, SelectedPage, ToolType } from '../types';
 import type { CompressionTier } from './compressionOptions';
-import { compressPDF, mergePDFs, organizePDF, rotatePDF, splitPDF } from './pdfService';
+import type { CropBox, ImageToPdfInput, ImageToPdfOptions, PageNumberOptions, PdfEditAnnotation, PdfFormFillOptions, WatermarkOptions } from './pdfOperations';
+import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, fillPDFForm, imagesToPDF, mergePDFs, organizePDF, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from './pdfService';
 import { recognizePdfPages } from './ocrService';
 import { protectPdfWithPassword, unlockPdfWithPassword } from './qpdfService';
 import { parseSplitRanges } from './splitRanges';
@@ -13,6 +14,12 @@ export interface ToolExecutionConfig {
   protectPassword: string;
   protectConfirmPassword: string;
   unlockPassword: string;
+  pageNumberOptions: PageNumberOptions;
+  watermarkOptions: WatermarkOptions;
+  cropBox: CropBox;
+  editAnnotations: PdfEditAnnotation[];
+  formFillOptions: PdfFormFillOptions;
+  imageToPdfOptions: ImageToPdfOptions;
 }
 
 export interface ToolExecutionRequest {
@@ -105,6 +112,60 @@ export async function processActiveTool(request: ToolExecutionRequest): Promise<
         outputFileName: createProcessedFileName(primaryFile.name, 'unlocked'),
         outputMimeType: 'application/pdf',
       };
+    case 'repair':
+      return {
+        outputBuffer: await repairPDF(primaryBuffer),
+        outputFileName: createProcessedFileName(primaryFile.name, 'repaired'),
+        outputMimeType: 'application/pdf',
+      };
+    case 'addPageNumbers':
+      return {
+        outputBuffer: await addPageNumbersPDF(primaryBuffer, request.config.pageNumberOptions),
+        outputFileName: createProcessedFileName(primaryFile.name, 'numbered'),
+        outputMimeType: 'application/pdf',
+      };
+    case 'addWatermark':
+      return {
+        outputBuffer: await addWatermarkPDF(primaryBuffer, request.config.watermarkOptions),
+        outputFileName: createProcessedFileName(primaryFile.name, 'watermarked'),
+        outputMimeType: 'application/pdf',
+      };
+    case 'crop':
+      return {
+        outputBuffer: await cropPDF(primaryBuffer, request.config.cropBox),
+        outputFileName: createProcessedFileName(primaryFile.name, 'cropped'),
+        outputMimeType: 'application/pdf',
+      };
+    case 'edit':
+      return {
+        outputBuffer: await editPDF(primaryBuffer, request.config.editAnnotations),
+        outputFileName: createProcessedFileName(primaryFile.name, 'edited'),
+        outputMimeType: 'application/pdf',
+      };
+    case 'forms':
+      return {
+        outputBuffer: await fillPDFForm(primaryBuffer, request.config.formFillOptions),
+        outputFileName: createProcessedFileName(primaryFile.name, 'filled'),
+        outputMimeType: 'application/pdf',
+      };
+    case 'jpgToPdf':
+      return {
+        outputBuffer: await imagesToPDF(createImageInputs(request.files, request.buffers), request.config.imageToPdfOptions),
+        outputFileName: createImagePdfFileName(request.files),
+        outputMimeType: 'application/pdf',
+      };
+    case 'wordToPdf':
+      return {
+        outputBuffer: await wordToPDF(primaryBuffer),
+        outputFileName: createConvertedPdfFileName(primaryFile.name),
+        outputMimeType: 'application/pdf',
+      };
+    case 'powerPointToPdf':
+      return {
+        outputBuffer: await powerPointToPDF(primaryBuffer),
+        outputFileName: createConvertedPdfFileName(primaryFile.name),
+        outputMimeType: 'application/pdf',
+      };
     default:
       throw new Error('Unsupported PDF tool.');
   }
@@ -118,7 +179,22 @@ export function validateToolRequest(request: Pick<ToolExecutionRequest, 'activeT
   }
 
   if (files.length === 0) {
-    throw new Error('Add at least one PDF before starting local processing.');
+    throw new Error('Add at least one file before starting local processing.');
+  }
+
+  if (activeTool === 'jpgToPdf') {
+    assertImageFiles(files);
+    return;
+  }
+
+  if (activeTool === 'wordToPdf') {
+    assertSingleDocxFile(files);
+    return;
+  }
+
+  if (activeTool === 'powerPointToPdf') {
+    assertSinglePptxFile(files);
+    return;
   }
 
   if (activeTool === 'merge') {
@@ -222,6 +298,76 @@ function createOcrText(pageTexts: string[]): string {
     .join('\n\n');
 }
 
+function createImageInputs(files: FileMetadata[], buffers: ArrayBuffer[]): ImageToPdfInput[] {
+  return files.map((file, index) => ({
+    fileName: file.name,
+    mimeType: getRequiredImageMimeType(file),
+    data: buffers[index],
+  }));
+}
+
+function assertImageFiles(files: FileMetadata[]): void {
+  files.forEach((file) => {
+    if (!isSupportedImageFile(file)) {
+      throw new Error('JPG to PDF accepts only JPG, JPEG, or PNG image files.');
+    }
+  });
+}
+
+function assertSingleDocxFile(files: FileMetadata[]): void {
+  if (files.length !== 1) {
+    throw new Error('Word to PDF requires exactly one DOCX file.');
+  }
+
+  const [file] = files;
+  if (!isDocxFile(file)) {
+    throw new Error('Word to PDF accepts only DOCX files.');
+  }
+}
+
+function isDocxFile(file: FileMetadata): boolean {
+  return file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    || file.name.toLowerCase().endsWith('.docx');
+}
+
+function assertSinglePptxFile(files: FileMetadata[]): void {
+  if (files.length !== 1) {
+    throw new Error('PowerPoint to PDF requires exactly one PPTX file.');
+  }
+
+  const [file] = files;
+  if (!isPptxFile(file)) {
+    throw new Error('PowerPoint to PDF accepts only PPTX files.');
+  }
+}
+
+function isPptxFile(file: FileMetadata): boolean {
+  return file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    || file.name.toLowerCase().endsWith('.pptx');
+}
+
+function isSupportedImageFile(file: FileMetadata): boolean {
+  return getImageMimeType(file) !== null;
+}
+
+function getImageMimeType(file: FileMetadata): ImageToPdfInput['mimeType'] | null {
+  const name = file.name.toLowerCase();
+
+  if (file.type === 'image/png' || name.endsWith('.png')) return 'image/png';
+  if (file.type === 'image/jpeg' || name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  return null;
+}
+
+function getRequiredImageMimeType(file: FileMetadata): ImageToPdfInput['mimeType'] {
+  const mimeType = getImageMimeType(file);
+
+  if (!mimeType) {
+    throw new Error(`Unsupported image file: ${file.name}.`);
+  }
+
+  return mimeType;
+}
+
 function encodeText(text: string): ArrayBuffer {
   const bytes = new TextEncoder().encode(text);
   return bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
@@ -230,6 +376,20 @@ function encodeText(text: string): ArrayBuffer {
 function createProcessedFileName(fileName: string, suffix: string): string {
   const baseName = fileName.replace(/\.pdf$/i, '') || 'document';
   return `${baseName}-${suffix}.pdf`;
+}
+
+function createImagePdfFileName(files: FileMetadata[]): string {
+  if (files.length > 1) {
+    return 'images-converted.pdf';
+  }
+
+  const baseName = files[0].name.replace(/\.[^.]+$/i, '') || 'image';
+  return `${baseName}-converted.pdf`;
+}
+
+function createConvertedPdfFileName(fileName: string): string {
+  const baseName = fileName.replace(/\.[^.]+$/i, '') || 'document';
+  return `${baseName}-converted.pdf`;
 }
 
 function createProcessedTextFileName(fileName: string, suffix: string): string {

@@ -6,7 +6,29 @@ export type ToolType =
   | 'ocr' 
   | 'organize' 
   | 'protect' 
-  | 'unlock';
+  | 'unlock'
+  | 'repair'
+  | 'addPageNumbers'
+  | 'addWatermark'
+  | 'crop'
+  | 'edit'
+  | 'forms'
+  | 'jpgToPdf'
+  | 'wordToPdf'
+  | 'powerPointToPdf';
+
+export type PageNumberPosition = 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
+export interface WatermarkOptions {
+  type: 'text' | 'image';
+  text?: string;
+  image?: Blob | null;
+  imageName?: string | null;
+  opacity: number; // 0.0 to 1.0
+  rotation: number; // 0 to 360
+  size: number; // For text: font size, for image: scale/max-width percentage?
+  color?: string; // For text
+}
 
 export type JobStatus = 'idle' | 'reading' | 'processing' | 'success' | 'failed' | 'warning';
 

@@ -1,6 +1,8 @@
 import { workerPool } from './workerPool';
 import type { CompressionTier } from './compressionOptions';
-import type { OrganizePageRequest } from './pdfOperations';
+import type { CropBox, ImageToPdfInput, ImageToPdfOptions, OrganizePageRequest, PageNumberOptions, PdfEditAnnotation, PdfFormFillOptions, WatermarkOptions } from './pdfOperations';
+import { convertWordToPdf } from './wordToPdfService';
+import { convertPowerPointToPdf } from './powerPointToPdfService';
 
 export interface SplitRange {
   start: number;
@@ -21,6 +23,43 @@ export function rotatePDF(file: ArrayBuffer, rotations: number[]): Promise<Array
 
 export function organizePDF(file: ArrayBuffer, pages: OrganizePageRequest[]): Promise<ArrayBuffer> {
   return workerPool.runJob('pdf', 'organize-pdf', { file, pages }, [file]);
+}
+
+export function repairPDF(file: ArrayBuffer): Promise<ArrayBuffer> {
+  return workerPool.runJob('pdf', 'repair-pdf', { file }, [file]);
+}
+
+export function addPageNumbersPDF(file: ArrayBuffer, options: PageNumberOptions): Promise<ArrayBuffer> {
+  return workerPool.runJob('pdf', 'add-page-numbers-pdf', { file, options }, [file]);
+}
+
+export function addWatermarkPDF(file: ArrayBuffer, options: WatermarkOptions): Promise<ArrayBuffer> {
+  return workerPool.runJob('pdf', 'add-watermark-pdf', { file, options }, [file]);
+}
+
+export function cropPDF(file: ArrayBuffer, cropBox: CropBox): Promise<ArrayBuffer> {
+  return workerPool.runJob('pdf', 'crop-pdf', { file, cropBox }, [file]);
+}
+
+export function editPDF(file: ArrayBuffer, annotations: PdfEditAnnotation[]): Promise<ArrayBuffer> {
+  return workerPool.runJob('pdf', 'edit-pdf', { file, annotations }, [file]);
+}
+
+export function fillPDFForm(file: ArrayBuffer, options: PdfFormFillOptions): Promise<ArrayBuffer> {
+  return workerPool.runJob('pdf', 'fill-pdf-form', { file, options }, [file]);
+}
+
+export function imagesToPDF(images: ImageToPdfInput[], options: ImageToPdfOptions): Promise<ArrayBuffer> {
+  const transfer = images.map((image) => image.data);
+  return workerPool.runJob('pdf', 'images-to-pdf', { images, options }, transfer);
+}
+
+export function wordToPDF(file: ArrayBuffer): Promise<ArrayBuffer> {
+  return convertWordToPdf(file);
+}
+
+export function powerPointToPDF(file: ArrayBuffer): Promise<ArrayBuffer> {
+  return convertPowerPointToPdf(file);
 }
 
 export function compressPDF(file: ArrayBuffer, tier: CompressionTier = 'recommended'): Promise<ArrayBuffer> {

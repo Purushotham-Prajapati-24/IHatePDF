@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useFileStore } from '../useFileStore';
 import { FileMetadata } from '../../types';
-import { compressPDF, mergePDFs, organizePDF, rotatePDF, splitPDF } from '../../services/pdfService';
+import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, fillPDFForm, imagesToPDF, mergePDFs, organizePDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from '../../services/pdfService';
 import { recognizePdfPages } from '../../services/ocrService';
 import { protectPdfWithPassword, unlockPdfWithPassword } from '../../services/qpdfService';
 
@@ -10,6 +10,14 @@ vi.mock('../../services/pdfService', () => ({
   splitPDF: vi.fn(async () => [new Uint8Array([37, 80, 68, 70]).buffer]),
   rotatePDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
   organizePDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  repairPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  addPageNumbersPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  addWatermarkPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  cropPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  editPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  fillPDFForm: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  imagesToPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  wordToPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
   compressPDF: vi.fn(async () => new Uint8Array([37, 80]).buffer),
 }));
 
@@ -32,6 +40,39 @@ describe('useFileStore', () => {
     useFileStore.getState().setProtectPassword('');
     useFileStore.getState().setProtectConfirmPassword('');
     useFileStore.getState().setUnlockPassword('');
+    useFileStore.getState().setPageNumberOptions({
+      position: 'bottom-right',
+      format: 'Page {n} of {total}',
+      font: 'helvetica',
+      color: '#111111',
+      size: 12,
+      margin: 36,
+    });
+    useFileStore.getState().setWatermarkOptions({
+      type: 'text',
+      text: 'CONFIDENTIAL',
+      image: null,
+      imageName: null,
+      opacity: 0.3,
+      rotation: 45,
+      font: 'helvetica',
+      color: '#111111',
+      size: 48,
+    });
+    useFileStore.getState().setCropBox({ x: 0, y: 0, width: 300, height: 300 });
+    useFileStore.getState().setEditAnnotations([{
+      type: 'text',
+      pageIndex: 0,
+      viewportWidth: 300,
+      viewportHeight: 300,
+      x: 36,
+      y: 36,
+      text: 'CONFIDENTIAL',
+      size: 18,
+      color: '#111111',
+    }]);
+    useFileStore.getState().setFormFillOptions({ fields: [{ name: '', value: '' }], flatten: true });
+    useFileStore.getState().setImageToPdfOptions({ pageSize: 'image', margin: 0 });
     vi.clearAllMocks();
   });
 
@@ -280,6 +321,195 @@ describe('useFileStore', () => {
       { pageIndex: 0, rotation: 90 },
     ]);
     expect(useFileStore.getState().processedFileName).toBe('pages-organized.pdf');
+  });
+
+  it('calls the repair service and stores a repaired PDF output', async () => {
+    const mockFile: FileMetadata = {
+      id: 'repair',
+      name: 'broken.pdf',
+      size: 4,
+      type: 'application/pdf',
+      blob: new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'application/pdf' }),
+    };
+
+    useFileStore.getState().setActiveTool('repair');
+    useFileStore.getState().addFiles([mockFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(repairPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer));
+    expect(useFileStore.getState().processedFileName).toBe('broken-repaired.pdf');
+    expect(useFileStore.getState().processedBlob?.type).toBe('application/pdf');
+  });
+
+  it('calls the page number service with configured overlay options', async () => {
+    const mockFile: FileMetadata = {
+      id: 'numbers',
+      name: 'report.pdf',
+      size: 4,
+      type: 'application/pdf',
+      blob: new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'application/pdf' }),
+    };
+
+    useFileStore.getState().setActiveTool('addPageNumbers');
+    useFileStore.getState().setPageNumberOptions({ format: 'Page {n} of {total}', position: 'bottom-right' });
+    useFileStore.getState().addFiles([mockFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(addPageNumbersPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer), expect.objectContaining({
+      format: 'Page {n} of {total}',
+      position: 'bottom-right',
+    }));
+    expect(useFileStore.getState().processedFileName).toBe('report-numbered.pdf');
+  });
+
+  it('calls the watermark service with configured stamp options', async () => {
+    const mockFile: FileMetadata = {
+      id: 'watermark',
+      name: 'draft.pdf',
+      size: 4,
+      type: 'application/pdf',
+      blob: new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'application/pdf' }),
+    };
+
+    useFileStore.getState().setActiveTool('addWatermark');
+    useFileStore.getState().setWatermarkOptions({ text: 'DRAFT', opacity: 0.25, rotation: 45 });
+    useFileStore.getState().addFiles([mockFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(addWatermarkPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer), expect.objectContaining({
+      text: 'DRAFT',
+      opacity: 0.25,
+      rotation: 45,
+    }));
+    expect(useFileStore.getState().processedFileName).toBe('draft-watermarked.pdf');
+  });
+
+  it('calls the crop service with configured page bounds', async () => {
+    const mockFile: FileMetadata = {
+      id: 'crop',
+      name: 'page.pdf',
+      size: 4,
+      type: 'application/pdf',
+      blob: new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'application/pdf' }),
+    };
+
+    useFileStore.getState().setActiveTool('crop');
+    useFileStore.getState().setCropBox({ x: 10, y: 20, width: 200, height: 240 });
+    useFileStore.getState().addFiles([mockFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(cropPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer), {
+      x: 10,
+      y: 20,
+      width: 200,
+      height: 240,
+    });
+    expect(useFileStore.getState().processedFileName).toBe('page-cropped.pdf');
+  });
+
+  it('calls the edit service with configured annotations', async () => {
+    const mockFile: FileMetadata = {
+      id: 'edit',
+      name: 'markup.pdf',
+      size: 4,
+      type: 'application/pdf',
+      blob: new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'application/pdf' }),
+    };
+    const annotations = [{
+      type: 'text' as const,
+      pageIndex: 0,
+      viewportWidth: 300,
+      viewportHeight: 300,
+      x: 20,
+      y: 40,
+      text: 'SIGNED',
+      size: 16,
+      color: '#111111',
+    }];
+
+    useFileStore.getState().setActiveTool('edit');
+    useFileStore.getState().setEditAnnotations(annotations);
+    useFileStore.getState().addFiles([mockFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(editPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer), annotations);
+    expect(useFileStore.getState().processedFileName).toBe('markup-edited.pdf');
+  });
+
+  it('calls the form fill service with configured field values', async () => {
+    const mockFile: FileMetadata = {
+      id: 'forms',
+      name: 'application.pdf',
+      size: 4,
+      type: 'application/pdf',
+      blob: new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'application/pdf' }),
+    };
+    const options = { fields: [{ name: 'name', value: 'Ada Lovelace' }], flatten: true };
+
+    useFileStore.getState().setActiveTool('forms');
+    useFileStore.getState().setFormFillOptions(options);
+    useFileStore.getState().addFiles([mockFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(fillPDFForm).toHaveBeenCalledWith(expect.any(ArrayBuffer), options);
+    expect(useFileStore.getState().processedFileName).toBe('application-filled.pdf');
+  });
+
+  it('converts ordered JPG and PNG images into a PDF output', async () => {
+    const jpgFile: FileMetadata = {
+      id: 'jpg',
+      name: 'first.jpg',
+      size: 4,
+      type: 'image/jpeg',
+      blob: new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'image/jpeg' }),
+    };
+    const pngFile: FileMetadata = {
+      id: 'png',
+      name: 'second.png',
+      size: 4,
+      type: 'image/png',
+      blob: new Blob([new Uint8Array([5, 6, 7, 8])], { type: 'image/png' }),
+    };
+
+    useFileStore.getState().setActiveTool('jpgToPdf');
+    useFileStore.getState().setImageToPdfOptions({ pageSize: 'a4', margin: 24 });
+    useFileStore.getState().addFiles([jpgFile, pngFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(imagesToPDF).toHaveBeenCalledWith([
+      expect.objectContaining({ fileName: 'first.jpg', mimeType: 'image/jpeg' }),
+      expect.objectContaining({ fileName: 'second.png', mimeType: 'image/png' }),
+    ], expect.objectContaining({ pageSize: 'a4', margin: 24 }));
+    expect(useFileStore.getState().processedBlob?.type).toBe('application/pdf');
+    expect(useFileStore.getState().processedFileName).toBe('images-converted.pdf');
+  });
+
+  it('converts a DOCX file into a PDF output', async () => {
+    const docxFile: FileMetadata = {
+      id: 'docx',
+      name: 'resume.docx',
+      size: 4,
+      type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      blob: new Blob([new Uint8Array([80, 75, 3, 4])], {
+        type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      }),
+    };
+
+    useFileStore.getState().setActiveTool('wordToPdf');
+    useFileStore.getState().addFiles([docxFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(wordToPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer));
+    expect(useFileStore.getState().processedBlob?.type).toBe('application/pdf');
+    expect(useFileStore.getState().processedFileName).toBe('resume-converted.pdf');
   });
 
   it('stores OCR output as a page-labeled text blob', async () => {

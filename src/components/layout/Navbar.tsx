@@ -21,8 +21,8 @@ export const Navbar: React.FC = () => {
       <div className="max-w-[1440px] mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo & Brand */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-brand-primary to-brand-primary/80 shadow-[0_0_20px_hsla(354,76%,49%,0.4)]">
-            <span className="font-outfit font-bold text-white text-xl">IH</span>
+          <div className="flex items-center justify-center w-10 h-10 overflow-hidden rounded-xl shadow-[0_0_15px_rgba(0,0,0,0.1)] bg-white">
+            <img src="/logo.png" alt="IHatePDF Logo" className="w-full h-full object-contain rounded-xl" />
           </div>
           <span className="font-outfit font-bold text-xl tracking-tight text-text-primary hidden sm:block">
             IHate<span className="text-brand-primary">PDF</span>
