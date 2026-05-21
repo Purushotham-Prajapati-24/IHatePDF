@@ -53,10 +53,17 @@ graph TD
 
 ## ✨ Core Features
 
+### 🔒 Privacy & Architecture
 - **100% Private**: Zero server uploads. Everything executes client-side.
 - **Blazing Fast**: Dynamic lazy-loading of WASM modules.
 - **Offline Capable**: Full Progressive Web App (PWA) support allowing you to process PDFs without an internet connection.
 - **Rich Visual Aesthetics**: Glassmorphism, modern HSL color palettes, and responsive micro-animations.
+
+### 🧰 Supported Tools
+- **Organize & Optimize**: Merge, Split, and Compress PDFs seamlessly.
+- **Convert TO PDF**: Word (`.docx`), PowerPoint (`.pptx`), Excel (`.xlsx`), HTML, and Images (JPG/PNG).
+- **Convert FROM PDF**: Extract to Word (`.docx`), PowerPoint (`.pptx`), Excel (`.xlsx`), and JPG.
+- **Advanced Editing**: Add Page Numbers, Insert Custom Watermarks, Crop Pages, Edit/Annotate PDFs, Fill & Flatten PDF Forms, and Repair Corrupt PDFs.
 
 ## 🛠️ Development
 
