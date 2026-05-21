@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Download, FileText, RefreshCw, Search, Trash2, Zap } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Download, FileText, Home, RefreshCw, Search, Trash2, Zap } from 'lucide-react';
 import { initDB, type FileBufferRecord } from '../db/localDb';
 import { useFileStore } from '../store/useFileStore';
 import { filterFileBufferRecords, sortFileBufferRecords } from '../services/fileBufferHistory';
@@ -91,6 +91,14 @@ export const History: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
+            <Link
+              to="/"
+              aria-label="Back to homepage"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-border-glass bg-white/[0.04] px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-text-primary transition-all hover:border-brand-primary/40 hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40"
+            >
+              <Home className="h-4 w-4" />
+              Home
+            </Link>
             <button
               type="button"
               onClick={() => void loadFileBuffer()}

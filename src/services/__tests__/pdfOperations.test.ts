@@ -114,6 +114,41 @@ describe('pdfOperations', () => {
     expect(watermarkedPdf.getPages().every((page) => page.node.get(PDFName.of('Contents')) !== undefined)).toBe(true);
   });
 
+  it('adds a translucent image watermark to every page', async () => {
+    const sourcePdf = await createPdfWithPages(2);
+
+    const watermarkedPdf = await PDFDocument.load(await addWatermarkToPdfBuffer(sourcePdf, {
+      type: 'image',
+      text: '',
+      imageData: createPngBuffer(),
+      imageMimeType: 'image/png',
+      opacity: 0.35,
+      rotation: 15,
+      font: 'helvetica',
+      color: '#111111',
+      size: 30,
+    }));
+
+    expect(watermarkedPdf.getPageCount()).toBe(2);
+    expect(watermarkedPdf.getPages().every((page) => page.node.get(PDFName.of('Contents')) !== undefined)).toBe(true);
+  });
+
+  it('rejects image watermarks without image data', async () => {
+    const sourcePdf = await createPdfWithPages(1);
+
+    await expect(addWatermarkToPdfBuffer(sourcePdf, {
+      type: 'image',
+      text: '',
+      imageData: null,
+      imageMimeType: null,
+      opacity: 0.3,
+      rotation: 45,
+      font: 'helvetica',
+      color: '#111111',
+      size: 30,
+    })).rejects.toThrow('watermark image');
+  });
+
   it('rejects invalid watermark opacity', async () => {
     const sourcePdf = await createPdfWithPages(1);
 

@@ -156,6 +156,35 @@ describe('toolProcessor validation', () => {
     })).toThrow('password');
   });
 
+  it('validates watermark mode requirements', () => {
+    expect(() => validateToolRequest({
+      activeTool: 'addWatermark',
+      files: [pdfFile],
+      config: { ...baseConfig, watermarkOptions: { ...baseConfig.watermarkOptions, text: '' } },
+    })).toThrow('text');
+
+    expect(() => validateToolRequest({
+      activeTool: 'addWatermark',
+      files: [pdfFile],
+      config: { ...baseConfig, watermarkOptions: { ...baseConfig.watermarkOptions, type: 'image', image: null, imageName: null } },
+    })).toThrow('watermark image');
+
+    expect(() => validateToolRequest({
+      activeTool: 'addWatermark',
+      files: [pdfFile],
+      config: {
+        ...baseConfig,
+        watermarkOptions: {
+          ...baseConfig.watermarkOptions,
+          type: 'image',
+          text: '',
+          image: new Blob([new Uint8Array([1])], { type: 'image/png' }),
+          imageName: 'stamp.png',
+        },
+      },
+    })).not.toThrow();
+  });
+
   it('accepts one or more JPG to PDF image files', () => {
     expect(() => validateToolRequest({
       activeTool: 'jpgToPdf',

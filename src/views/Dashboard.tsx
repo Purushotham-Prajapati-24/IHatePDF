@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Activity, Clock3, Database, FileCheck2, ShieldCheck, TrendingDown } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Activity, Clock3, Database, FileCheck2, Home, ShieldCheck, TrendingDown } from 'lucide-react';
 import { initDB } from '../db/localDb';
 import type { TaskLog } from '../types';
 import {
@@ -87,20 +88,30 @@ export const Dashboard: React.FC = () => {
     <div className="flex w-full flex-col gap-8 py-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <section className="relative overflow-hidden rounded-[2rem] border border-border-glass bg-bg-card/35 p-6 shadow-2xl backdrop-blur-2xl sm:p-8">
         <div className="pointer-events-none absolute right-0 top-0 h-72 w-72 translate-x-1/3 -translate-y-1/3 rounded-full bg-brand-primary/15 blur-3xl" />
-        <div className="relative z-10 max-w-3xl">
-          <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-brand-primary/5 px-4 py-2">
-            <Database className="h-4 w-4 text-brand-primary" />
-            <span className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">
-              IndexedDB transparency ledger
-            </span>
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-brand-primary/5 px-4 py-2">
+              <Database className="h-4 w-4 text-brand-primary" />
+              <span className="text-[10px] font-black uppercase tracking-[0.24em] text-brand-primary">
+                IndexedDB transparency ledger
+              </span>
+            </div>
+            <h1 className="font-outfit text-4xl font-black uppercase leading-tight tracking-tight text-text-primary sm:text-5xl">
+              Local-first privacy dashboard
+            </h1>
+            <p className="mt-4 max-w-[65ch] text-base leading-7 text-text-secondary">
+              Review the concrete value of keeping PDF work on this device: saved bytes, avoided uploads,
+              worker time, and the local processing rhythm stored in your browser.
+            </p>
           </div>
-          <h1 className="font-outfit text-4xl font-black uppercase leading-tight tracking-tight text-text-primary sm:text-5xl">
-            Local-first privacy dashboard
-          </h1>
-          <p className="mt-4 max-w-[65ch] text-base leading-7 text-text-secondary">
-            Review the concrete value of keeping PDF work on this device: saved bytes, avoided uploads,
-            worker time, and the local processing rhythm stored in your browser.
-          </p>
+          <Link
+            to="/"
+            aria-label="Back to homepage"
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border-glass bg-white/[0.04] px-4 py-3 text-xs font-black uppercase tracking-[0.18em] text-text-primary transition-all hover:border-brand-primary/40 hover:text-brand-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary/40"
+          >
+            <Home className="h-4 w-4" />
+            Home
+          </Link>
         </div>
       </section>
 

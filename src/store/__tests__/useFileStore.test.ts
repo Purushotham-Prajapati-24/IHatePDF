@@ -395,6 +395,26 @@ describe('useFileStore', () => {
     expect(useFileStore.getState().processedFileName).toBe('draft-watermarked.pdf');
   });
 
+  it('rejects image watermark execution until a supported image is selected', async () => {
+    const mockFile: FileMetadata = {
+      id: 'watermark-image',
+      name: 'draft.pdf',
+      size: 4,
+      type: 'application/pdf',
+      blob: new Blob([new Uint8Array([1, 2, 3, 4])], { type: 'application/pdf' }),
+    };
+
+    useFileStore.getState().setActiveTool('addWatermark');
+    useFileStore.getState().setWatermarkOptions({ type: 'image', text: '', image: null, imageName: null });
+    useFileStore.getState().addFiles([mockFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(addWatermarkPDF).not.toHaveBeenCalled();
+    expect(useFileStore.getState().status).toBe('failed');
+    expect(useFileStore.getState().errorMessage).toContain('watermark image');
+  });
+
   it('calls the crop service with configured page bounds', async () => {
     const mockFile: FileMetadata = {
       id: 'crop',
