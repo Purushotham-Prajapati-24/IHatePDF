@@ -744,6 +744,51 @@ export const ConfigSidebar: React.FC = () => {
         );
       case 'excelToPdf':
         return <ExcelConfig />;
+      case 'repair':
+        return (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Wrench className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Repair Engine</h3>
+            </div>
+            
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass flex flex-col items-center text-center gap-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-brand-primary/20 blur-xl rounded-full animate-pulse" />
+                <div className="relative w-20 h-20 rounded-full bg-bg-dark border-2 border-brand-primary flex items-center justify-center">
+                  <Zap className="w-10 h-10 text-brand-primary" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-brand-primary flex items-center justify-center border-2 border-bg-dark">
+                  <ShieldCheck className="w-3 h-3 text-bg-dark" />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-black text-text-primary uppercase tracking-widest">Neural Reconstruction</p>
+                <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight max-w-[200px]">
+                  Our engine will sweep the binary stream to rebuild broken cross-reference tables and fix truncated trailers.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {[
+                { label: 'Binary Scan', active: true },
+                { label: 'XREF Recovery', active: true },
+                { label: 'Trailer Rebuild', active: true },
+                { label: 'Catalog Validation', active: true },
+              ].map((step, i) => (
+                <div key={i} className="flex items-center justify-between px-4 py-3 rounded-xl bg-bg-dark/20 border border-border-glass/50">
+                  <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">{step.label}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[8px] font-black text-brand-primary uppercase">Ready</span>
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-primary animate-pulse" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
       case 'htmlToPdf':
         return (
           <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
