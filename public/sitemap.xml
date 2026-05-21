@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://ihatepdf.io/</loc>
+    <lastmod>2026-05-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url><loc>https://ihatepdf.io/tool/merge</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/split</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/compress</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/rotate</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/ocr</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/organize</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/protect</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/unlock</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/repair</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/addPageNumbers</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/addWatermark</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/crop</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/edit</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/forms</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/jpgToPdf</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/wordToPdf</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/powerPointToPdf</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/excelToPdf</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/htmlToPdf</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/pdfToJpg</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/pdfToWord</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/pdfToPowerPoint</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/pdfToExcel</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://ihatepdf.io/tool/pdfToPdfA</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+</urlset>

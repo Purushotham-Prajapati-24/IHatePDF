@@ -17,6 +17,7 @@ import { recognizePdfPages } from './ocrService';
 import { protectPdfWithPassword, unlockPdfWithPassword } from './qpdfService';
 import { parseSplitRanges } from './splitRanges';
 import { createZipArchive } from '../utils/zipFiles';
+import { convertWithGateway, getEngineLabel, isConversionServiceConfigured, type ConversionEngine, type ConversionMode } from './conversionGateway';
 
 export interface ToolExecutionConfig {
   compressionTier: CompressionTier;
@@ -34,6 +35,8 @@ export interface ToolExecutionConfig {
   excelToPdfOptions: ExcelToPdfOptions;
   htmlToPdfOptions: HtmlToPdfOptions;
   pdfToPowerPointOptions: PdfToPowerPointOptions;
+  conversionMode?: ConversionMode;
+  conversionServiceConfirmed?: boolean;
 }
 
 export interface ToolExecutionRequest {
@@ -49,6 +52,7 @@ export interface ToolExecutionResult {
   outputFileName: string;
   outputMimeType: string;
   notice?: string;
+  engine?: ConversionEngine;
 }
 
 export async function processActiveTool(request: ToolExecutionRequest): Promise<ToolExecutionResult> {
@@ -169,53 +173,53 @@ export async function processActiveTool(request: ToolExecutionRequest): Promise<
         outputMimeType: 'application/pdf',
       };
     case 'wordToPdf':
-      return {
-        outputBuffer: await wordToPDF(primaryBuffer),
-        outputFileName: createConvertedPdfFileName(primaryFile.name),
-        outputMimeType: 'application/pdf',
-      };
+      return runGatewayConversion(request, primaryFile, primaryBuffer, 'application/pdf', async () => ({
+        buffer: await wordToPDF(primaryBuffer),
+        fileName: createConvertedPdfFileName(primaryFile.name),
+        mimeType: 'application/pdf',
+      }));
     case 'powerPointToPdf':
-      return {
-        outputBuffer: await powerPointToPDF(primaryBuffer),
-        outputFileName: createConvertedPdfFileName(primaryFile.name),
-        outputMimeType: 'application/pdf',
-      };
+      return runGatewayConversion(request, primaryFile, primaryBuffer, 'application/pdf', async () => ({
+        buffer: await powerPointToPDF(primaryBuffer),
+        fileName: createConvertedPdfFileName(primaryFile.name),
+        mimeType: 'application/pdf',
+      }));
     case 'excelToPdf':
-      return {
-        outputBuffer: await excelToPDF(primaryBuffer, request.config.excelToPdfOptions),
-        outputFileName: createConvertedPdfFileName(primaryFile.name),
-        outputMimeType: 'application/pdf',
-      };
+      return runGatewayConversion(request, primaryFile, primaryBuffer, 'application/pdf', async () => ({
+        buffer: await excelToPDF(primaryBuffer, request.config.excelToPdfOptions),
+        fileName: createConvertedPdfFileName(primaryFile.name),
+        mimeType: 'application/pdf',
+      }));
     case 'htmlToPdf':
-      return {
-        outputBuffer: await htmlToPDF(primaryBuffer),
-        outputFileName: createConvertedPdfFileName(primaryFile.name),
-        outputMimeType: 'application/pdf',
-      };
+      return runGatewayConversion(request, primaryFile, primaryBuffer, 'application/pdf', async () => ({
+        buffer: await htmlToPDF(primaryBuffer),
+        fileName: createConvertedPdfFileName(primaryFile.name),
+        mimeType: 'application/pdf',
+      }));
     case 'pdfToJpg':
-      return {
-        outputBuffer: await pdfToJpg(primaryBuffer, primaryFile.name),
-        outputFileName: createConvertedArchiveName(primaryFile.name, 'jpg'),
-        outputMimeType: 'application/zip',
-      };
+      return runGatewayConversion(request, primaryFile, primaryBuffer, 'application/zip', async () => ({
+        buffer: await pdfToJpg(primaryBuffer, primaryFile.name),
+        fileName: createConvertedArchiveName(primaryFile.name, 'jpg'),
+        mimeType: 'application/zip',
+      }));
     case 'pdfToWord':
-      return {
-        outputBuffer: await pdfToWord(primaryBuffer),
-        outputFileName: createConvertedDocumentName(primaryFile.name, 'docx'),
-        outputMimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      };
+      return runGatewayConversion(request, primaryFile, primaryBuffer, 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', async () => ({
+        buffer: await pdfToWord(primaryBuffer),
+        fileName: createConvertedDocumentName(primaryFile.name, 'docx'),
+        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      }));
     case 'pdfToPowerPoint':
-      return {
-        outputBuffer: await pdfToPowerPoint(primaryBuffer, request.config.pdfToPowerPointOptions),
-        outputFileName: createConvertedDocumentName(primaryFile.name, 'pptx'),
-        outputMimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-      };
+      return runGatewayConversion(request, primaryFile, primaryBuffer, 'application/vnd.openxmlformats-officedocument.presentationml.presentation', async () => ({
+        buffer: await pdfToPowerPoint(primaryBuffer, request.config.pdfToPowerPointOptions),
+        fileName: createConvertedDocumentName(primaryFile.name, 'pptx'),
+        mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      }));
     case 'pdfToExcel':
-      return {
-        outputBuffer: await pdfToExcel(primaryBuffer),
-        outputFileName: createConvertedDocumentName(primaryFile.name, 'xlsx'),
-        outputMimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      };
+      return runGatewayConversion(request, primaryFile, primaryBuffer, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', async () => ({
+        buffer: await pdfToExcel(primaryBuffer),
+        fileName: createConvertedDocumentName(primaryFile.name, 'xlsx'),
+        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }));
     case 'pdfToPdfA':
       return {
         outputBuffer: await pdfToPdfA(primaryBuffer),
@@ -291,6 +295,73 @@ export function validateToolRequest(request: Pick<ToolExecutionRequest, 'activeT
   if (activeTool === 'addWatermark') {
     assertWatermarkConfig(config.watermarkOptions);
   }
+
+  if (requiresServicePrivacyConfirmation(activeTool, config)) {
+    throw new Error('Confirm self-hosted conversion processing before using high-fidelity mode.');
+  }
+}
+
+async function runGatewayConversion(
+  request: ToolExecutionRequest,
+  primaryFile: FileMetadata,
+  primaryBuffer: ArrayBuffer,
+  targetMimeType: string,
+  runLocalFallback: () => Promise<{ buffer: ArrayBuffer; fileName: string; mimeType: string; warnings?: string[] }>,
+): Promise<ToolExecutionResult> {
+  const result = await convertWithGateway({
+    sourceMimeType: primaryFile.type || inferSourceMimeType(primaryFile.name),
+    targetMimeType,
+    mode: request.config.conversionMode ?? 'local-only',
+    fileName: primaryFile.name,
+    file: new Blob([primaryBuffer], { type: primaryFile.type || inferSourceMimeType(primaryFile.name) }),
+    options: createGatewayOptions(request),
+    tool: request.activeTool ?? 'merge',
+  }, runLocalFallback);
+
+  const outputBuffer = await result.blob.arrayBuffer();
+  return {
+    outputBuffer,
+    outputFileName: result.fileName,
+    outputMimeType: result.mimeType,
+    engine: result.engine,
+    notice: createConversionNotice(result.engine, result.warnings),
+  };
+}
+
+function createGatewayOptions(request: ToolExecutionRequest): Record<string, unknown> {
+  return {
+    excelToPdfOptions: request.config.excelToPdfOptions,
+    htmlToPdfOptions: request.config.htmlToPdfOptions,
+    pdfToPowerPointOptions: request.config.pdfToPowerPointOptions,
+  };
+}
+
+function createConversionNotice(engine: ConversionEngine, warnings: string[]): string | undefined {
+  const details = warnings.filter(Boolean);
+  const label = getEngineLabel(engine);
+
+  if (details.length === 0) return label;
+  return `${label}. ${details.join(' ')}`;
+}
+
+function requiresServicePrivacyConfirmation(activeTool: ToolType, config: ToolExecutionConfig): boolean {
+  return isConversionTool(activeTool)
+    && isConversionServiceConfigured()
+    && config.conversionMode !== 'local-only'
+    && config.conversionServiceConfirmed !== true;
+}
+
+function isConversionTool(tool: ToolType): boolean {
+  return [
+    'wordToPdf',
+    'powerPointToPdf',
+    'excelToPdf',
+    'htmlToPdf',
+    'pdfToJpg',
+    'pdfToWord',
+    'pdfToPowerPoint',
+    'pdfToExcel',
+  ].includes(tool);
 }
 
 async function compressWithFallback(

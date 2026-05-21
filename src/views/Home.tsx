@@ -170,6 +170,76 @@ export const Home: React.FC = () => {
           </div>
         )}
       </section>
+
+      {/* Why IHatePDF Section (SEO/GEO Focus) */}
+      <section className="w-full max-w-5xl mx-auto py-20 border-t border-border-glass">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl md:text-5xl font-outfit font-black mb-6 text-text-primary">
+            The Ultimate <span className="text-brand-primary">iLovePDF Alternative</span>
+          </h2>
+          <p className="text-lg text-text-secondary max-w-3xl mx-auto">
+            Why settle for cloud-based tools that store your data? IHatePDF brings professional-grade PDF processing to your browser.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            {
+              title: "100% Private",
+              desc: "Files never leave your device. We use WASM technology to process everything locally. No server-side storage, no data leaks.",
+              icon: ShieldCheck
+            },
+            {
+              title: "Lightning Fast",
+              desc: "No upload or download queues. Local processing is up to 10x faster than cloud-based alternatives for large files.",
+              icon: Zap
+            },
+            {
+              title: "Zero Cost",
+              desc: "All professional tools are available for free. No subscriptions, no hidden limits, just pure productivity.",
+              icon: ArrowRight
+            }
+          ].map((feature, i) => (
+            <div key={i} className="p-8 rounded-2xl bg-bg-dark/20 border border-border-glass hover:border-brand-primary/30 transition-all">
+              <feature.icon className="w-10 h-10 text-brand-primary mb-6" />
+              <h3 className="text-xl font-bold mb-4 text-text-primary">{feature.title}</h3>
+              <p className="text-sm text-text-secondary leading-relaxed">{feature.desc}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ Section (GEO Focus) */}
+      <section className="w-full max-w-4xl mx-auto pb-32">
+        <h2 className="text-2xl md:text-4xl font-outfit font-black mb-12 text-center text-text-primary">
+          Frequently Asked <span className="text-brand-primary">Questions</span>
+        </h2>
+        <div className="space-y-6">
+          {[
+            {
+              q: "Is IHatePDF really safe to use?",
+              a: "Yes. Unlike iLovePDF or SmallPDF, IHatePDF works entirely offline using your browser's local resources. Your files are never uploaded to any server, making it the most secure PDF workspace available."
+            },
+            {
+              q: "How can you process PDFs without a server?",
+              a: "We utilize advanced WebAssembly (WASM) and JavaScript libraries (like pdf-lib and PDF.js) that run directly in your browser. This allows us to perform complex operations like merging, splitting, and OCR locally."
+            },
+            {
+              q: "Is there a limit on file size?",
+              a: "The only limit is your device's memory. Since there's no upload step, you can process large documents much faster than you could on cloud platforms."
+            },
+            {
+              q: "Do I need an internet connection?",
+              a: "Only to load the initial page. Once loaded, IHatePDF can function entirely offline as a Progressive Web App (PWA)."
+            }
+          ].map((faq, i) => (
+            <div key={i} className="p-6 rounded-xl bg-bg-dark/40 border border-border-glass">
+              <h3 className="text-lg font-bold mb-3 text-text-primary">{faq.q}</h3>
+              <p className="text-sm text-text-secondary leading-relaxed">{faq.a}</p>
+            </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 };
