@@ -11,7 +11,7 @@ import type {
   PdfFormFillOptions,
   WatermarkOptions,
 } from './pdfOperations';
-import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, excelToPDF, fillPDFForm, htmlToPDF, imagesToPDF, mergePDFs, organizePDF, pdfToJpg, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from './pdfService';
+import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, excelToPDF, fillPDFForm, htmlToPDF, imagesToPDF, mergePDFs, organizePDF, pdfToJpg, pdfToWord, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from './pdfService';
 import { recognizePdfPages } from './ocrService';
 import { protectPdfWithPassword, unlockPdfWithPassword } from './qpdfService';
 import { parseSplitRanges } from './splitRanges';
@@ -195,6 +195,12 @@ export async function processActiveTool(request: ToolExecutionRequest): Promise<
         outputBuffer: await pdfToJpg(primaryBuffer, primaryFile.name),
         outputFileName: createConvertedArchiveName(primaryFile.name, 'jpg'),
         outputMimeType: 'application/zip',
+      };
+    case 'pdfToWord':
+      return {
+        outputBuffer: await pdfToWord(primaryBuffer),
+        outputFileName: createConvertedDocumentName(primaryFile.name, 'docx'),
+        outputMimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
       };
     default:
       throw new Error('Unsupported PDF tool.');
@@ -477,6 +483,11 @@ function createProcessedArchiveName(fileName: string): string {
 function createConvertedArchiveName(fileName: string, suffix: string): string {
   const baseName = fileName.replace(/\.[^.]+$/i, '') || 'document';
   return `${baseName}-${suffix}.zip`;
+}
+
+function createConvertedDocumentName(fileName: string, extension: string): string {
+  const baseName = fileName.replace(/\.[^.]+$/i, '') || 'document';
+  return `${baseName}-converted.${extension}`;
 }
 
 function createSplitZipEntries(fileName: string, ranges: Array<{ start: number; end: number }>, splitBuffers: ArrayBuffer[]) {

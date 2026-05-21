@@ -18,7 +18,10 @@ export type ToolType =
   | 'powerPointToPdf'
   | 'excelToPdf'
   | 'htmlToPdf'
-  | 'pdfToJpg';
+  | 'pdfToJpg'
+  | 'pdfToWord'
+  | 'pdfToPowerPoint'
+  | 'pdfToExcel';
 
 export type PageNumberPosition = 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
 

@@ -16,6 +16,7 @@ import { convertPowerPointToPdf } from './powerPointToPdfService';
 import { convertExcelToPdf, getExcelSheets } from './excelToPdfService';
 import { convertHtmlToPdf } from './htmlToPdfService';
 import { convertPdfToJpgArchive } from './pdfToJpgService';
+import { convertPdfToWord } from './pdfToWordService';
 
 export interface SplitRange {
   start: number;
@@ -89,6 +90,10 @@ export function htmlToPDF(file: ArrayBuffer): Promise<ArrayBuffer> {
 
 export function pdfToJpg(file: ArrayBuffer, fileName: string): Promise<ArrayBuffer> {
   return convertPdfToJpgArchive(file, fileName);
+}
+
+export function pdfToWord(file: ArrayBuffer): Promise<ArrayBuffer> {
+  return convertPdfToWord(file);
 }
 
 export function compressPDF(file: ArrayBuffer, tier: CompressionTier = 'recommended'): Promise<ArrayBuffer> {

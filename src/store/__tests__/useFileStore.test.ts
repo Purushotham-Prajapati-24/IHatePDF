@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useFileStore } from '../useFileStore';
 import { FileMetadata } from '../../types';
-import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, excelToPDF, fillPDFForm, htmlToPDF, imagesToPDF, mergePDFs, organizePDF, pdfToJpg, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from '../../services/pdfService';
+import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, excelToPDF, fillPDFForm, htmlToPDF, imagesToPDF, mergePDFs, organizePDF, pdfToJpg, pdfToWord, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from '../../services/pdfService';
 import { recognizePdfPages } from '../../services/ocrService';
 import { protectPdfWithPassword, unlockPdfWithPassword } from '../../services/qpdfService';
 
@@ -22,6 +22,7 @@ vi.mock('../../services/pdfService', () => ({
   excelToPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
   htmlToPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
   pdfToJpg: vi.fn(async () => new Uint8Array([0x50, 0x4b, 0x03, 0x04]).buffer),
+  pdfToWord: vi.fn(async () => new Uint8Array([0x50, 0x4b, 0x03, 0x04]).buffer),
   compressPDF: vi.fn(async () => new Uint8Array([37, 80]).buffer),
 }));
 
@@ -598,6 +599,25 @@ describe('useFileStore', () => {
     expect(pdfToJpg).toHaveBeenCalledWith(expect.any(ArrayBuffer), 'scan.pdf');
     expect(useFileStore.getState().processedBlob?.type).toBe('application/zip');
     expect(useFileStore.getState().processedFileName).toBe('scan-jpg.zip');
+  });
+
+  it('converts PDF text into a Word DOCX output', async () => {
+    const pdfFile: FileMetadata = {
+      id: 'pdf-to-word',
+      name: 'manual.pdf',
+      size: 4,
+      type: 'application/pdf',
+      blob: new Blob([new Uint8Array([37, 80, 68, 70])], { type: 'application/pdf' }),
+    };
+
+    useFileStore.getState().setActiveTool('pdfToWord');
+    useFileStore.getState().addFiles([pdfFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(pdfToWord).toHaveBeenCalledWith(expect.any(ArrayBuffer));
+    expect(useFileStore.getState().processedBlob?.type).toBe('application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+    expect(useFileStore.getState().processedFileName).toBe('manual-converted.docx');
   });
 
   it('stores OCR output as a page-labeled text blob', async () => {

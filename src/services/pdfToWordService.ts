@@ -1,5 +1,5 @@
-import { Document, Packer, Paragraph, TextRun } from 'docx';
 import { GlobalWorkerOptions, VerbosityLevel, getDocument, type PDFDocumentProxy } from 'pdfjs-dist';
+import type { TextItem } from 'pdfjs-dist/types/src/display/api';
 
 const PDFJS_WORKER_SRC = '/assets/pdf.worker.min.mjs';
 const LINE_Y_TOLERANCE = 4;
@@ -7,8 +7,7 @@ const DEFAULT_FONT_SIZE = 22;
 
 GlobalWorkerOptions.workerSrc = PDFJS_WORKER_SRC;
 
-interface PdfTextItem {
-  str: string;
+interface PdfTextItem extends TextItem {
   transform: number[];
 }
 
@@ -29,18 +28,12 @@ export async function convertPdfToWord(file: ArrayBuffer): Promise<ArrayBuffer> 
   const pdf = await loadPdf(file);
 
   try {
-    const paragraphs = await extractParagraphs(pdf);
-    if (paragraphs.length === 0) {
+    const lines = await extractTextLines(pdf);
+    if (lines.length === 0) {
       throw new Error('No readable text was found in this PDF.');
     }
 
-    const document = new Document({
-      creator: 'IHatePDF',
-      title: 'Converted PDF',
-      sections: [{ children: paragraphs }],
-    });
-
-    return Packer.toArrayBuffer(document);
+    return createDocx(lines);
   } finally {
     await pdf.destroy();
   }
@@ -60,18 +53,19 @@ async function loadPdf(data: ArrayBuffer): Promise<PDFDocumentProxy> {
   }
 }
 
-async function extractParagraphs(pdf: PDFDocumentProxy): Promise<Paragraph[]> {
-  const paragraphs: Paragraph[] = [];
+async function extractTextLines(pdf: PDFDocumentProxy): Promise<TextLine[]> {
+  const textLines: TextLine[] = [];
 
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    const lines = groupTextLines(content.items.filter(isPdfTextItem).map(toTextRunPosition));
-    paragraphs.push(...lines.map(createParagraph));
+    const textItems = content.items.filter((item): item is PdfTextItem => isPdfTextItem(item));
+    const lines = groupTextLines(textItems.map(toTextRunPosition));
+    textLines.push(...lines);
     page.cleanup();
   }
 
-  return paragraphs;
+  return textLines;
 }
 
 function isPdfTextItem(item: unknown): item is PdfTextItem {
@@ -116,12 +110,21 @@ function addRunToLine(lines: TextLine[], run: TextRunPosition): void {
   lines.push({ y: run.y, runs: [run] });
 }
 
-function createParagraph(line: TextLine): Paragraph {
-  return new Paragraph({
-    children: line.runs.map((run, index) => new TextRun({
-      text: `${index === 0 ? '' : ' '}${run.text}`,
-      size: run.size,
-    })),
-    spacing: { after: 120 },
+async function createDocx(lines: TextLine[]): Promise<ArrayBuffer> {
+  const { Document, Packer, Paragraph, TextRun } = await import('docx');
+  const document = new Document({
+    creator: 'IHatePDF',
+    title: 'Converted PDF',
+    sections: [{
+      children: lines.map((line) => new Paragraph({
+        children: line.runs.map((run, index) => new TextRun({
+          text: `${index === 0 ? '' : ' '}${run.text}`,
+          size: run.size,
+        })),
+        spacing: { after: 120 },
+      })),
+    }],
   });
+
+  return Packer.toArrayBuffer(document);
 }

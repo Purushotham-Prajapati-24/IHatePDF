@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useFileStore } from '../../store/useFileStore';
-import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock, LayoutGrid, Stamp, Crop, ImageIcon as Image, PencilLine, FilePenLine, Images, ListChecks } from 'lucide-react';
+import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock, LayoutGrid, Stamp, Crop, ImageIcon as Image, PencilLine, FilePenLine, Images, ListChecks, FileText, Presentation, Table2 } from 'lucide-react';
 import { cn } from '../layout/Navbar';
 import type { PageNumberFont } from '../../services/pdfOperations';
 import { getExcelSheetNames } from '../../services/pdfService';
@@ -763,6 +763,87 @@ export const ConfigSidebar: React.FC = () => {
             </div>
             <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass text-center">
               <p className="text-xs font-black text-text-primary uppercase tracking-widest">Every page exports at 150 DPI</p>
+            </div>
+          </div>
+        );
+      case 'pdfToWord':
+        return (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <FileText className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">DOCX Export</h3>
+            </div>
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass text-center">
+              <p className="text-xs font-black text-text-primary uppercase tracking-widest">Editable text lines are rebuilt by page position</p>
+            </div>
+          </div>
+        );
+      case 'pdfToWord':
+        return (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <FileText className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Word Export</h3>
+            </div>
+            
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 text-brand-primary animate-spin" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-black text-text-primary uppercase tracking-widest">Layout Analysis</p>
+                <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight">
+                  Analyzing spatial text bounds to reconstruct paragraphs and styles into DOCX format.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-brand-primary/5 border border-brand-primary/10">
+              <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight italic text-center">
+                This process runs entirely in your browser. Large documents may take a few moments.
+              </p>
+            </div>
+          </div>
+        );
+      case 'pdfToPowerPoint':
+        return (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Presentation className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">PowerPoint Export</h3>
+            </div>
+            
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center">
+                <Settings className="w-8 h-8 text-brand-primary animate-pulse" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-black text-text-primary uppercase tracking-widest">Slide Mapping</p>
+                <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight">
+                  Mapping PDF page elements to PowerPoint slide objects. Each page becomes one slide.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      case 'pdfToExcel':
+        return (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Table2 className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Excel Export</h3>
+            </div>
+            
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center">
+                <LayoutGrid className="w-8 h-8 text-brand-primary" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-black text-text-primary uppercase tracking-widest">Table Detection</p>
+                <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight">
+                  Identifying tabular structures and aligning data into XLSX rows and columns.
+                </p>
+              </div>
             </div>
           </div>
         );

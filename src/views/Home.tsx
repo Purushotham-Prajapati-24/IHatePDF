@@ -56,6 +56,9 @@ const tools: Tool[] = [
   { id: 'excelToPdf', title: 'Excel to PDF', description: 'Render XLSX worksheets into paginated PDF tables locally.', icon: Table2 },
   { id: 'htmlToPdf', title: 'HTML to PDF', description: 'Render HTML files into clean paginated PDFs locally.', icon: Code2 },
   { id: 'pdfToJpg', title: 'PDF to JPG', description: 'Export every PDF page as a zipped JPG image set locally.', icon: FileImage },
+  { id: 'pdfToWord', title: 'PDF to Word', description: 'Extract editable PDF text into a DOCX document locally.', icon: FileText },
+  { id: 'pdfToPowerPoint', title: 'PDF to PowerPoint', description: 'Convert PDF pages into editable PowerPoint slides locally.', icon: Presentation },
+  { id: 'pdfToExcel', title: 'PDF to Excel', description: 'Extract tables from PDF into structured Excel sheets locally.', icon: Table2 },
 ];
 
 export const Home: React.FC = () => {
