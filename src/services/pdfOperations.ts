@@ -128,6 +128,12 @@ export interface HtmlToPdfOptions {
   margin: number;
 }
 
+export interface PdfToPowerPointOptions {
+  layout: '16x9' | '4x3';
+  includeImages: boolean;
+  fontFace: string;
+}
+
 export async function mergePdfBuffers(files: ArrayBuffer[]): Promise<ArrayBuffer> {
   const mergedPdf = await PDFDocument.create();
 

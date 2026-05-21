@@ -9,9 +9,10 @@ import type {
   PageNumberOptions,
   PdfEditAnnotation,
   PdfFormFillOptions,
+  PdfToPowerPointOptions,
   WatermarkOptions,
 } from './pdfOperations';
-import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, excelToPDF, fillPDFForm, htmlToPDF, imagesToPDF, mergePDFs, organizePDF, pdfToJpg, pdfToWord, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from './pdfService';
+import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, excelToPDF, fillPDFForm, htmlToPDF, imagesToPDF, mergePDFs, organizePDF, pdfToExcel, pdfToJpg, pdfToPdfA, pdfToPowerPoint, pdfToWord, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from './pdfService';
 import { recognizePdfPages } from './ocrService';
 import { protectPdfWithPassword, unlockPdfWithPassword } from './qpdfService';
 import { parseSplitRanges } from './splitRanges';
@@ -32,6 +33,7 @@ export interface ToolExecutionConfig {
   imageToPdfOptions: ImageToPdfOptions;
   excelToPdfOptions: ExcelToPdfOptions;
   htmlToPdfOptions: HtmlToPdfOptions;
+  pdfToPowerPointOptions: PdfToPowerPointOptions;
 }
 
 export interface ToolExecutionRequest {
@@ -201,6 +203,24 @@ export async function processActiveTool(request: ToolExecutionRequest): Promise<
         outputBuffer: await pdfToWord(primaryBuffer),
         outputFileName: createConvertedDocumentName(primaryFile.name, 'docx'),
         outputMimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      };
+    case 'pdfToPowerPoint':
+      return {
+        outputBuffer: await pdfToPowerPoint(primaryBuffer, request.config.pdfToPowerPointOptions),
+        outputFileName: createConvertedDocumentName(primaryFile.name, 'pptx'),
+        outputMimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      };
+    case 'pdfToExcel':
+      return {
+        outputBuffer: await pdfToExcel(primaryBuffer),
+        outputFileName: createConvertedDocumentName(primaryFile.name, 'xlsx'),
+        outputMimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      };
+    case 'pdfToPdfA':
+      return {
+        outputBuffer: await pdfToPdfA(primaryBuffer),
+        outputFileName: createProcessedFileName(primaryFile.name, 'pdfa'),
+        outputMimeType: 'application/pdf',
       };
     default:
       throw new Error('Unsupported PDF tool.');

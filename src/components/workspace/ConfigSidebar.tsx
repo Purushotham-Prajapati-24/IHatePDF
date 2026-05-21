@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useFileStore } from '../../store/useFileStore';
-import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock, LayoutGrid, Stamp, Crop, ImageIcon as Image, PencilLine, FilePenLine, Images, ListChecks, FileText, Presentation, Table2 } from 'lucide-react';
+import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock, LayoutGrid, Stamp, Crop, ImageIcon as Image, PencilLine, FilePenLine, Images, ListChecks, FileText, Presentation, Table2, Monitor, MonitorPlay, Check, Type, ChevronDown, ShieldCheck, Archive } from 'lucide-react';
 import { cn } from '../layout/Navbar';
 import type { PageNumberFont } from '../../services/pdfOperations';
 import { getExcelSheetNames } from '../../services/pdfService';
@@ -160,6 +160,7 @@ export const ConfigSidebar: React.FC = () => {
     imageToPdfOptions,
     excelToPdfOptions,
     htmlToPdfOptions,
+    pdfToPowerPointOptions,
     setCompressionTier,
     setSplitRangeInput,
     setOcrLanguage,
@@ -174,6 +175,7 @@ export const ConfigSidebar: React.FC = () => {
     setImageToPdfOptions,
     setExcelToPdfOptions,
     setHtmlToPdfOptions,
+    setPdfToPowerPointOptions,
   } = useFileStore();
 
   if (!activeTool) return null;
@@ -771,18 +773,6 @@ export const ConfigSidebar: React.FC = () => {
           <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
             <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
               <FileText className="w-5 h-5 text-brand-primary" />
-              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">DOCX Export</h3>
-            </div>
-            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass text-center">
-              <p className="text-xs font-black text-text-primary uppercase tracking-widest">Editable text lines are rebuilt by page position</p>
-            </div>
-          </div>
-        );
-      case 'pdfToWord':
-        return (
-          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
-              <FileText className="w-5 h-5 text-brand-primary" />
               <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Word Export</h3>
             </div>
             
@@ -813,14 +803,86 @@ export const ConfigSidebar: React.FC = () => {
               <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">PowerPoint Export</h3>
             </div>
             
-            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass flex flex-col items-center text-center gap-4">
-              <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center">
-                <Settings className="w-8 h-8 text-brand-primary animate-pulse" />
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-1">Slide Layout</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: '16x9', label: 'Widescreen (16:9)', icon: Monitor },
+                    { id: '4x3', label: 'Standard (4:3)', icon: MonitorPlay },
+                  ].map((layout) => (
+                    <button
+                      key={layout.id}
+                      onClick={() => setPdfToPowerPointOptions({ layout: layout.id as '16x9' | '4x3' })}
+                      className={cn(
+                        "flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all duration-300",
+                        pdfToPowerPointOptions.layout === layout.id
+                          ? "bg-brand-primary/10 border-brand-primary text-brand-primary"
+                          : "bg-bg-dark/40 border-border-glass text-text-secondary hover:border-brand-primary/50"
+                      )}
+                    >
+                      <layout.icon className="w-5 h-5" />
+                      <span className="text-[10px] font-bold uppercase tracking-tight">{layout.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-1">Assets</label>
+                <button
+                  onClick={() => setPdfToPowerPointOptions({ includeImages: !pdfToPowerPointOptions.includeImages })}
+                  className={cn(
+                    "w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all duration-300",
+                    pdfToPowerPointOptions.includeImages
+                      ? "bg-brand-primary/10 border-brand-primary text-brand-primary"
+                      : "bg-bg-dark/40 border-border-glass text-text-secondary hover:border-brand-primary/50"
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <Image className="w-5 h-5" />
+                    <span className="text-xs font-bold uppercase tracking-widest">Extract Images</span>
+                  </div>
+                  <div className={cn(
+                    "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all",
+                    pdfToPowerPointOptions.includeImages ? "bg-brand-primary border-brand-primary" : "border-text-secondary"
+                  )}>
+                    {pdfToPowerPointOptions.includeImages && <Check className="w-3 h-3 text-bg-dark" />}
+                  </div>
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-1">Typography</label>
+                <div className="relative group">
+                  <Type className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-primary" />
+                  <select
+                    value={pdfToPowerPointOptions.fontFace}
+                    onChange={(e) => setPdfToPowerPointOptions({ fontFace: e.target.value })}
+                    className="w-full bg-bg-dark/60 border-2 border-border-glass rounded-xl py-2.5 pl-10 pr-4 text-xs font-bold text-text-primary focus:border-brand-primary outline-none appearance-none transition-all uppercase tracking-widest cursor-pointer"
+                  >
+                    <option value="Arial">Arial</option>
+                    <option value="Verdana">Verdana</option>
+                    <option value="Tahoma">Tahoma</option>
+                    <option value="Trebuchet MS">Trebuchet MS</option>
+                    <option value="Times New Roman">Times New Roman</option>
+                    <option value="Georgia">Georgia</option>
+                    <option value="Garamond">Garamond</option>
+                    <option value="Courier New">Courier New</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary pointer-events-none group-hover:text-brand-primary transition-colors" />
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-bg-dark/40 border-2 border-border-glass flex items-start gap-4">
+              <div className="mt-1">
+                <ShieldCheck className="w-4 h-4 text-brand-primary" />
               </div>
               <div className="space-y-1">
-                <p className="text-xs font-black text-text-primary uppercase tracking-widest">Slide Mapping</p>
-                <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight">
-                  Mapping PDF page elements to PowerPoint slide objects. Each page becomes one slide.
+                <p className="text-[10px] font-black text-text-primary uppercase tracking-widest">AI Mapping Active</p>
+                <p className="text-[9px] text-text-secondary leading-relaxed uppercase tracking-tight">
+                  Analyzing PDF layers to reconstruct editable PPTX elements.
                 </p>
               </div>
             </div>
@@ -966,6 +1028,40 @@ export const ConfigSidebar: React.FC = () => {
                 onChange={(e) => setOcrLanguage(e.target.value.trim() || 'eng')}
                 className="w-full p-4 rounded-xl border-2 border-border-glass bg-bg-dark/40 text-text-primary placeholder:text-text-secondary/40 focus:border-brand-primary/50 outline-none transition-all font-mono"
               />
+            </div>
+          </div>
+        );
+      case 'pdfToPdfA':
+        return (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Archive className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">PDF/A Archiving</h3>
+            </div>
+            
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center">
+                <ShieldCheck className="w-8 h-8 text-brand-primary animate-pulse" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-black text-text-primary uppercase tracking-widest">ISO 19005 Compliance</p>
+                <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight">
+                  Injecting XMP metadata and color profiles for long-term digital preservation.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-[10px] font-black text-text-secondary uppercase tracking-widest px-1">Conformance Level</label>
+              <div className="bg-bg-dark/60 border-2 border-border-glass rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-bold text-text-primary uppercase tracking-widest">PDF/A-1b</span>
+                  <span className="text-[10px] font-black text-brand-primary uppercase bg-brand-primary/10 px-2 py-0.5 rounded">Active</span>
+                </div>
+                <p className="text-[9px] text-text-secondary uppercase tracking-tight leading-relaxed">
+                  Basic level conformance ensuring reliable visual reproduction over time.
+                </p>
+              </div>
             </div>
           </div>
         );

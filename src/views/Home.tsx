@@ -23,7 +23,8 @@ import {
   Presentation,
   Table2,
   Code2,
-  FileImage
+  FileImage,
+  Archive
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../components/layout/Navbar';
@@ -59,6 +60,7 @@ const tools: Tool[] = [
   { id: 'pdfToWord', title: 'PDF to Word', description: 'Extract editable PDF text into a DOCX document locally.', icon: FileText },
   { id: 'pdfToPowerPoint', title: 'PDF to PowerPoint', description: 'Convert PDF pages into editable PowerPoint slides locally.', icon: Presentation },
   { id: 'pdfToExcel', title: 'PDF to Excel', description: 'Extract tables from PDF into structured Excel sheets locally.', icon: Table2 },
+  { id: 'pdfToPdfA', title: 'PDF to PDF/A', description: 'Convert PDF files into ISO-standardized PDF/A for long-term archiving.', icon: Archive },
 ];
 
 export const Home: React.FC = () => {

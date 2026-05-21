@@ -18,6 +18,7 @@ import type {
   PageNumberOptions,
   PdfEditAnnotation,
   PdfFormFillOptions,
+  PdfToPowerPointOptions,
   WatermarkOptions,
 } from '../services/pdfOperations';
 import { processActiveTool, validateToolRequest } from '../services/toolProcessor';
@@ -47,6 +48,7 @@ interface FileState {
   imageToPdfOptions: ImageToPdfOptions;
   excelToPdfOptions: ExcelToPdfOptions;
   htmlToPdfOptions: HtmlToPdfOptions;
+  pdfToPowerPointOptions: PdfToPowerPointOptions;
   
   // --- Page Organizer Specific State ---
   selectedPages: SelectedPage[]; // Used for split or visual re-ordering grid
@@ -76,6 +78,7 @@ interface FileState {
   setImageToPdfOptions: (options: Partial<ImageToPdfOptions>) => void;
   setExcelToPdfOptions: (options: Partial<ExcelToPdfOptions>) => void;
   setHtmlToPdfOptions: (options: Partial<HtmlToPdfOptions>) => void;
+  setPdfToPowerPointOptions: (options: Partial<PdfToPowerPointOptions>) => void;
   updateFileRotation: (id: string, rotation: number) => void;
   updateFilePreviews: (id: string, previewUrls: string[]) => void;
   reorderFiles: (startIndex: number, endIndex: number) => void;
@@ -185,6 +188,11 @@ export const useFileStore = create<FileState>()(
           orientation: 'portrait',
           margin: 36,
         },
+        pdfToPowerPointOptions: {
+          layout: '16x9',
+          includeImages: true,
+          fontFace: 'Arial',
+        },
         selectedPages: [],
         donationStats: {
           totalTasksCompleted: 0,
@@ -261,6 +269,9 @@ export const useFileStore = create<FileState>()(
         setHtmlToPdfOptions: (options) => set((state) => {
           state.htmlToPdfOptions = { ...state.htmlToPdfOptions, ...options };
         }),
+        setPdfToPowerPointOptions: (options) => set((state) => {
+          state.pdfToPowerPointOptions = { ...state.pdfToPowerPointOptions, ...options };
+        }),
         updateFileRotation: (id, rotation) => set((state) => {
           const file = state.files.find((f) => f.id === id);
           if (file) {
@@ -333,6 +344,7 @@ export const useFileStore = create<FileState>()(
             imageToPdfOptions: snapshot.imageToPdfOptions,
             excelToPdfOptions: snapshot.excelToPdfOptions,
             htmlToPdfOptions: snapshot.htmlToPdfOptions,
+            pdfToPowerPointOptions: snapshot.pdfToPowerPointOptions,
           };
 
           try {
@@ -393,6 +405,7 @@ export const useFileStore = create<FileState>()(
                 imageToPdfOptions: get().imageToPdfOptions,
                 excelToPdfOptions: get().excelToPdfOptions,
                 htmlToPdfOptions: get().htmlToPdfOptions,
+                pdfToPowerPointOptions: get().pdfToPowerPointOptions,
               },
             });
 

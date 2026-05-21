@@ -64,6 +64,11 @@ const baseConfig: ToolExecutionConfig = {
     orientation: 'portrait',
     margin: 36,
   },
+  pdfToPowerPointOptions: {
+    layout: '16x9',
+    includeImages: true,
+    fontFace: 'Arial',
+  },
 };
 
 const pdfFile: FileMetadata = {

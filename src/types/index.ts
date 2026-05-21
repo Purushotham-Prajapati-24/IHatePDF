@@ -21,7 +21,8 @@ export type ToolType =
   | 'pdfToJpg'
   | 'pdfToWord'
   | 'pdfToPowerPoint'
-  | 'pdfToExcel';
+  | 'pdfToExcel'
+  | 'pdfToPdfA';
 
 export type PageNumberPosition = 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
 

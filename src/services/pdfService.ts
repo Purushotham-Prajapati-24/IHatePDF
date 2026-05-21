@@ -9,13 +9,17 @@ import type {
   PageNumberOptions,
   PdfEditAnnotation,
   PdfFormFillOptions,
+  PdfToPowerPointOptions,
   WatermarkOptions,
 } from './pdfOperations';
 import { convertWordToPdf } from './wordToPdfService';
 import { convertPowerPointToPdf } from './powerPointToPdfService';
 import { convertExcelToPdf, getExcelSheets } from './excelToPdfService';
 import { convertHtmlToPdf } from './htmlToPdfService';
+import { convertPdfToPdfA } from './pdfAService';
+import { convertPdfToExcel } from './pdfToExcelService';
 import { convertPdfToJpgArchive } from './pdfToJpgService';
+import { convertPdfToPowerPoint } from './pdfToPowerPointService';
 import { convertPdfToWord } from './pdfToWordService';
 
 export interface SplitRange {
@@ -94,6 +98,18 @@ export function pdfToJpg(file: ArrayBuffer, fileName: string): Promise<ArrayBuff
 
 export function pdfToWord(file: ArrayBuffer): Promise<ArrayBuffer> {
   return convertPdfToWord(file);
+}
+
+export function pdfToPowerPoint(file: ArrayBuffer, options?: PdfToPowerPointOptions): Promise<ArrayBuffer> {
+  return convertPdfToPowerPoint(file, options);
+}
+
+export function pdfToExcel(file: ArrayBuffer): Promise<ArrayBuffer> {
+  return convertPdfToExcel(file);
+}
+
+export function pdfToPdfA(file: ArrayBuffer): Promise<ArrayBuffer> {
+  return convertPdfToPdfA(file);
 }
 
 export function compressPDF(file: ArrayBuffer, tier: CompressionTier = 'recommended'): Promise<ArrayBuffer> {
