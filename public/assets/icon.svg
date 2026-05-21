@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">IHatePDF app icon</title>
+  <desc id="desc">Crimson PDF document mark on a dark slate background.</desc>
+  <rect width="512" height="512" rx="112" fill="#11151c"/>
+  <path d="M156 72h146l86 90v278H156z" fill="#f8fafc"/>
+  <path d="M302 72v92h86z" fill="#d9dee7"/>
+  <path d="M114 268c0-44 36-80 80-80h124c44 0 80 36 80 80s-36 80-80 80H194c-44 0-80-36-80-80z" fill="#dc1e35"/>
+  <path d="M184 305v-74h36c20 0 33 12 33 30s-13 30-33 30h-16v14zm20-31h14c9 0 15-5 15-13s-6-13-15-13h-14zm62 31v-74h30c23 0 39 15 39 37s-16 37-39 37zm20-17h8c13 0 21-8 21-20s-8-20-21-20h-8zm65 17v-74h51v17h-31v14h27v17h-27v26z" fill="#ffffff"/>
+</svg>

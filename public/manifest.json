@@ -1,0 +1,10 @@
+{
+  "name": "IHatePDF",
+  "short_name": "IHatePDF",
+  "description": "Local-first PDF tools that process files in your browser.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#11151c",
+  "theme_color": "#dc1e35",
+  "icons": []
+}
