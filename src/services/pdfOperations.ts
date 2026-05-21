@@ -116,6 +116,18 @@ export interface ImageToPdfOptions {
   margin: number;
 }
 
+export interface ExcelToPdfOptions {
+  selectedSheets: string[];
+  orientation: ImageToPdfOrientation;
+  pageSize: ImageToPdfPageSize;
+}
+
+export interface HtmlToPdfOptions {
+  pageSize: ImageToPdfPageSize;
+  orientation: ImageToPdfOrientation;
+  margin: number;
+}
+
 export async function mergePdfBuffers(files: ArrayBuffer[]): Promise<ArrayBuffer> {
   const mergedPdf = await PDFDocument.create();
 

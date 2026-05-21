@@ -19,7 +19,7 @@ export const PageOrganizer: React.FC = () => {
   const [imageUrls, setImageUrls] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (activeTool === 'jpgToPdf' || activeTool === 'wordToPdf' || activeTool === 'powerPointToPdf') return;
+    if (activeTool === 'jpgToPdf' || activeTool === 'wordToPdf' || activeTool === 'powerPointToPdf' || activeTool === 'excelToPdf' || activeTool === 'htmlToPdf') return;
 
     const generateMissingPreviews = async () => {
       let needsInit = false;
@@ -157,6 +157,50 @@ export const PageOrganizer: React.FC = () => {
                 className="absolute bottom-2 right-2 p-1.5 rounded-md bg-bg-dark/80 text-text-primary opacity-0 group-hover:opacity-100 hover:bg-brand-primary hover:text-white backdrop-blur-sm transition-colors"
                 title="Remove Presentation"
               >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTool === 'excelToPdf') {
+    return (
+      <div className="w-full max-w-5xl mx-auto py-8">
+        <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+          {files.map((file) => (
+            <div key={file.id} className="relative group w-48 rounded-xl overflow-hidden border-2 border-border-glass bg-bg-card transition-all duration-200 shadow-sm hover:border-brand-primary/50">
+              <div className="aspect-[1/1.2] bg-white flex flex-col items-center justify-center p-4 text-center">
+                <div className="text-4xl font-black text-brand-primary">XLSX</div>
+                <div className="mt-3 text-xs font-bold text-bg-dark break-words">{file.name}</div>
+              </div>
+              <button
+                onClick={() => removeFile(file.id)}
+                className="absolute bottom-2 right-2 p-1.5 rounded-md bg-bg-dark/80 text-text-primary opacity-0 group-hover:opacity-100 hover:bg-brand-primary hover:text-white backdrop-blur-sm transition-colors"
+                title="Remove Workbook"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (activeTool === 'htmlToPdf') {
+    return (
+      <div className="w-full max-w-5xl mx-auto py-8">
+        <div className="flex flex-wrap gap-4 justify-center md:justify-start">
+          {files.map((file) => (
+            <div key={file.id} className="relative group w-48 rounded-xl overflow-hidden border-2 border-border-glass bg-bg-card transition-all duration-200 shadow-sm hover:border-brand-primary/50">
+              <div className="aspect-[1/1.2] bg-white flex flex-col items-center justify-center p-4 text-center">
+                <div className="text-4xl font-black text-brand-primary">HTML</div>
+                <div className="mt-3 text-xs font-bold text-bg-dark break-words">{file.name}</div>
+              </div>
+              <button onClick={() => removeFile(file.id)} className="absolute bottom-2 right-2 p-1.5 rounded-md bg-bg-dark/80 text-text-primary opacity-0 group-hover:opacity-100 hover:bg-brand-primary hover:text-white backdrop-blur-sm transition-colors" title="Remove HTML">
                 <Trash2 className="w-4 h-4" />
               </button>
             </div>

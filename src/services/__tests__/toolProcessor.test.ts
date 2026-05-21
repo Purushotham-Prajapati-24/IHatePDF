@@ -54,6 +54,16 @@ const baseConfig: ToolExecutionConfig = {
     orientation: 'portrait',
     margin: 0,
   },
+  excelToPdfOptions: {
+    selectedSheets: [],
+    orientation: 'landscape',
+    pageSize: 'a4',
+  },
+  htmlToPdfOptions: {
+    pageSize: 'a4',
+    orientation: 'portrait',
+    margin: 36,
+  },
 };
 
 const pdfFile: FileMetadata = {
@@ -80,6 +90,34 @@ const docxFile: FileMetadata = {
   blob: new Blob([new Uint8Array([80, 75, 3, 4])], {
     type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   }),
+};
+
+const pptxFile: FileMetadata = {
+  id: 'pptx',
+  name: 'deck.pptx',
+  size: 4,
+  type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  blob: new Blob([new Uint8Array([80, 75, 3, 4])], {
+    type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+  }),
+};
+
+const xlsxFile: FileMetadata = {
+  id: 'xlsx',
+  name: 'invoice.xlsx',
+  size: 4,
+  type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  blob: new Blob([new Uint8Array([80, 75, 3, 4])], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  }),
+};
+
+const htmlFile: FileMetadata = {
+  id: 'html',
+  name: 'invoice.html',
+  size: 4,
+  type: 'text/html',
+  blob: new Blob(['<h1>Invoice</h1>'], { type: 'text/html' }),
 };
 
 describe('toolProcessor validation', () => {
@@ -143,5 +181,53 @@ describe('toolProcessor validation', () => {
       files: [pdfFile],
       config: baseConfig,
     })).toThrow('DOCX');
+  });
+
+  it('accepts exactly one PPTX file for PowerPoint to PDF', () => {
+    expect(() => validateToolRequest({
+      activeTool: 'powerPointToPdf',
+      files: [pptxFile],
+      config: baseConfig,
+    })).not.toThrow();
+  });
+
+  it('rejects non-PPTX files for PowerPoint to PDF', () => {
+    expect(() => validateToolRequest({
+      activeTool: 'powerPointToPdf',
+      files: [pdfFile],
+      config: baseConfig,
+    })).toThrow('PPTX');
+  });
+
+  it('accepts exactly one XLSX file for Excel to PDF', () => {
+    expect(() => validateToolRequest({
+      activeTool: 'excelToPdf',
+      files: [xlsxFile],
+      config: baseConfig,
+    })).not.toThrow();
+  });
+
+  it('rejects non-XLSX files for Excel to PDF', () => {
+    expect(() => validateToolRequest({
+      activeTool: 'excelToPdf',
+      files: [pdfFile],
+      config: baseConfig,
+    })).toThrow('XLSX');
+  });
+
+  it('accepts exactly one HTML file for HTML to PDF', () => {
+    expect(() => validateToolRequest({
+      activeTool: 'htmlToPdf',
+      files: [htmlFile],
+      config: baseConfig,
+    })).not.toThrow();
+  });
+
+  it('rejects non-HTML files for HTML to PDF', () => {
+    expect(() => validateToolRequest({
+      activeTool: 'htmlToPdf',
+      files: [pdfFile],
+      config: baseConfig,
+    })).toThrow('HTML');
   });
 });

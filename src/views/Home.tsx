@@ -20,7 +20,10 @@ import {
   FilePenLine,
   Images,
   FileText,
-  Presentation
+  Presentation,
+  Table2,
+  Code2,
+  FileImage
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { cn } from '../components/layout/Navbar';
@@ -50,6 +53,9 @@ const tools: Tool[] = [
   { id: 'jpgToPdf', title: 'JPG to PDF', description: 'Convert JPG and PNG images into ordered PDF pages locally.', icon: Images },
   { id: 'wordToPdf', title: 'Word to PDF', description: 'Convert DOCX documents into paginated PDFs without uploading files.', icon: FileText },
   { id: 'powerPointToPdf', title: 'PowerPoint to PDF', description: 'Convert PPTX slides into landscape PDF pages locally.', icon: Presentation },
+  { id: 'excelToPdf', title: 'Excel to PDF', description: 'Render XLSX worksheets into paginated PDF tables locally.', icon: Table2 },
+  { id: 'htmlToPdf', title: 'HTML to PDF', description: 'Render HTML files into clean paginated PDFs locally.', icon: Code2 },
+  { id: 'pdfToJpg', title: 'PDF to JPG', description: 'Export every PDF page as a zipped JPG image set locally.', icon: FileImage },
 ];
 
 export const Home: React.FC = () => {

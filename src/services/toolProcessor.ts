@@ -1,7 +1,17 @@
 import type { FileMetadata, SelectedPage, ToolType } from '../types';
 import type { CompressionTier } from './compressionOptions';
-import type { CropBox, ImageToPdfInput, ImageToPdfOptions, PageNumberOptions, PdfEditAnnotation, PdfFormFillOptions, WatermarkOptions } from './pdfOperations';
-import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, fillPDFForm, imagesToPDF, mergePDFs, organizePDF, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from './pdfService';
+import type {
+  CropBox,
+  ExcelToPdfOptions,
+  HtmlToPdfOptions,
+  ImageToPdfInput,
+  ImageToPdfOptions,
+  PageNumberOptions,
+  PdfEditAnnotation,
+  PdfFormFillOptions,
+  WatermarkOptions,
+} from './pdfOperations';
+import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, excelToPDF, fillPDFForm, htmlToPDF, imagesToPDF, mergePDFs, organizePDF, pdfToJpg, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from './pdfService';
 import { recognizePdfPages } from './ocrService';
 import { protectPdfWithPassword, unlockPdfWithPassword } from './qpdfService';
 import { parseSplitRanges } from './splitRanges';
@@ -20,6 +30,8 @@ export interface ToolExecutionConfig {
   editAnnotations: PdfEditAnnotation[];
   formFillOptions: PdfFormFillOptions;
   imageToPdfOptions: ImageToPdfOptions;
+  excelToPdfOptions: ExcelToPdfOptions;
+  htmlToPdfOptions: HtmlToPdfOptions;
 }
 
 export interface ToolExecutionRequest {
@@ -166,6 +178,24 @@ export async function processActiveTool(request: ToolExecutionRequest): Promise<
         outputFileName: createConvertedPdfFileName(primaryFile.name),
         outputMimeType: 'application/pdf',
       };
+    case 'excelToPdf':
+      return {
+        outputBuffer: await excelToPDF(primaryBuffer, request.config.excelToPdfOptions),
+        outputFileName: createConvertedPdfFileName(primaryFile.name),
+        outputMimeType: 'application/pdf',
+      };
+    case 'htmlToPdf':
+      return {
+        outputBuffer: await htmlToPDF(primaryBuffer),
+        outputFileName: createConvertedPdfFileName(primaryFile.name),
+        outputMimeType: 'application/pdf',
+      };
+    case 'pdfToJpg':
+      return {
+        outputBuffer: await pdfToJpg(primaryBuffer, primaryFile.name),
+        outputFileName: createConvertedArchiveName(primaryFile.name, 'jpg'),
+        outputMimeType: 'application/zip',
+      };
     default:
       throw new Error('Unsupported PDF tool.');
   }
@@ -194,6 +224,16 @@ export function validateToolRequest(request: Pick<ToolExecutionRequest, 'activeT
 
   if (activeTool === 'powerPointToPdf') {
     assertSinglePptxFile(files);
+    return;
+  }
+
+  if (activeTool === 'excelToPdf') {
+    assertSingleExcelFile(files);
+    return;
+  }
+
+  if (activeTool === 'htmlToPdf') {
+    assertSingleHtmlFile(files);
     return;
   }
 
@@ -346,6 +386,38 @@ function isPptxFile(file: FileMetadata): boolean {
     || file.name.toLowerCase().endsWith('.pptx');
 }
 
+function assertSingleExcelFile(files: FileMetadata[]): void {
+  if (files.length !== 1) {
+    throw new Error('Excel to PDF requires exactly one XLSX file.');
+  }
+
+  const [file] = files;
+  if (!isExcelFile(file)) {
+    throw new Error('Excel to PDF accepts only XLSX files.');
+  }
+}
+
+function isExcelFile(file: FileMetadata): boolean {
+  return file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    || file.name.toLowerCase().endsWith('.xlsx');
+}
+
+function assertSingleHtmlFile(files: FileMetadata[]): void {
+  if (files.length !== 1) {
+    throw new Error('HTML to PDF requires exactly one HTML file.');
+  }
+
+  const [file] = files;
+  if (!isHtmlFile(file)) {
+    throw new Error('HTML to PDF accepts only HTML files.');
+  }
+}
+
+function isHtmlFile(file: FileMetadata): boolean {
+  const name = file.name.toLowerCase();
+  return file.type === 'text/html' || name.endsWith('.html') || name.endsWith('.htm');
+}
+
 function isSupportedImageFile(file: FileMetadata): boolean {
   return getImageMimeType(file) !== null;
 }
@@ -400,6 +472,11 @@ function createProcessedTextFileName(fileName: string, suffix: string): string {
 function createProcessedArchiveName(fileName: string): string {
   const baseName = fileName.replace(/\.pdf$/i, '') || 'document';
   return `${baseName}-split.zip`;
+}
+
+function createConvertedArchiveName(fileName: string, suffix: string): string {
+  const baseName = fileName.replace(/\.[^.]+$/i, '') || 'document';
+  return `${baseName}-${suffix}.zip`;
 }
 
 function createSplitZipEntries(fileName: string, ranges: Array<{ start: number; end: number }>, splitBuffers: ArrayBuffer[]) {

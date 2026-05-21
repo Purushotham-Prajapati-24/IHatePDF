@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useFileStore } from '../../store/useFileStore';
-import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock, LayoutGrid, Stamp, Crop, ImageIcon as Image, PencilLine, FilePenLine, Images } from 'lucide-react';
+import { Settings, Shield, Scissors, Minimize2, ArrowRight, Loader2, ScanText, Unlock, LayoutGrid, Stamp, Crop, ImageIcon as Image, PencilLine, FilePenLine, Images, ListChecks } from 'lucide-react';
 import { cn } from '../layout/Navbar';
 import type { PageNumberFont } from '../../services/pdfOperations';
+import { getExcelSheetNames } from '../../services/pdfService';
 
 type CompressionTier = 'extreme' | 'recommended' | 'low';
 
@@ -16,6 +17,128 @@ const COMPRESSION_TIERS: Array<{
   { id: 'recommended', label: 'Recommended', sub: 'Good quality, good savings', dpi: '150 DPI' },
   { id: 'low', label: 'Low Compression', sub: 'High quality, less savings', dpi: '220 DPI' },
 ];
+
+const ExcelConfig: React.FC = () => {
+  const { files, excelToPdfOptions, setExcelToPdfOptions } = useFileStore();
+  const [sheetNames, setSheetNames] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchSheets = async () => {
+      if (files.length > 0) {
+        setIsLoading(true);
+        try {
+          const buffer = await files[0].blob.arrayBuffer();
+          const names = await getExcelSheetNames(buffer);
+          setSheetNames(names);
+          if (excelToPdfOptions.selectedSheets.length === 0) {
+            setExcelToPdfOptions({ selectedSheets: names });
+          }
+        } catch (error) {
+          console.error('Failed to fetch Excel sheets:', error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    fetchSheets();
+  }, [files, setExcelToPdfOptions, excelToPdfOptions.selectedSheets.length]);
+
+  const toggleSheet = (name: string) => {
+    const current = excelToPdfOptions.selectedSheets;
+    const next = current.includes(name)
+      ? current.filter(s => s !== name)
+      : [...current, name];
+    setExcelToPdfOptions({ selectedSheets: next });
+  };
+
+  return (
+    <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+      <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+        <ListChecks className="w-5 h-5 text-brand-primary" />
+        <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Select Sheets</h3>
+      </div>
+
+      <div className="space-y-4">
+        <div className="max-h-48 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-2">
+              <Loader2 className="w-6 h-6 text-brand-primary animate-spin" />
+              <span className="text-[10px] font-bold text-text-secondary uppercase tracking-widest">Reading Workbook...</span>
+            </div>
+          ) : sheetNames.length > 0 ? (
+            sheetNames.map((name) => (
+              <button
+                key={name}
+                onClick={() => toggleSheet(name)}
+                className={cn(
+                  "w-full flex items-center justify-between p-3 rounded-xl border-2 transition-all text-left",
+                  excelToPdfOptions.selectedSheets.includes(name)
+                    ? "border-brand-primary bg-brand-primary/5 text-text-primary shadow-lg shadow-brand-primary/10"
+                    : "border-border-glass bg-bg-dark/20 text-text-secondary hover:border-brand-primary/30"
+                )}
+              >
+                <span className="text-xs font-bold truncate max-w-[180px]">{name}</span>
+                <div className={cn(
+                  "w-4 h-4 rounded-full border-2 flex items-center justify-center transition-all",
+                  excelToPdfOptions.selectedSheets.includes(name)
+                    ? "border-brand-primary bg-brand-primary"
+                    : "border-text-secondary/40"
+                )}>
+                  {excelToPdfOptions.selectedSheets.includes(name) && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                </div>
+              </button>
+            ))
+          ) : (
+            <p className="text-[10px] text-text-secondary text-center py-4 uppercase font-black">No sheets found</p>
+          )}
+        </div>
+
+        <div className="space-y-4 pt-4 border-t border-border-glass">
+           <div className="space-y-2">
+            <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Orientation</label>
+            <div className="flex p-1 bg-bg-dark/40 rounded-xl border border-border-glass">
+              {(['portrait', 'landscape'] as const).map((orientation) => (
+                <button
+                  key={orientation}
+                  onClick={() => setExcelToPdfOptions({ orientation })}
+                  className={cn(
+                    "flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                    excelToPdfOptions.orientation === orientation
+                      ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  {orientation}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-[10px] font-black text-text-secondary uppercase tracking-[0.2em]">Page Size</label>
+            <div className="flex p-1 bg-bg-dark/40 rounded-xl border border-border-glass">
+              {(['image', 'a4'] as const).map((pageSize) => (
+                <button
+                  key={pageSize}
+                  onClick={() => setExcelToPdfOptions({ pageSize })}
+                  className={cn(
+                    "flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all",
+                    excelToPdfOptions.pageSize === pageSize
+                      ? "bg-brand-primary text-white shadow-lg shadow-brand-primary/20"
+                      : "text-text-secondary hover:text-text-primary"
+                  )}
+                >
+                  {pageSize === 'image' ? 'Fit Content' : 'A4 Size'}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const ConfigSidebar: React.FC = () => {
   const {
@@ -35,6 +158,8 @@ export const ConfigSidebar: React.FC = () => {
     editAnnotations,
     formFillOptions,
     imageToPdfOptions,
+    excelToPdfOptions,
+    htmlToPdfOptions,
     setCompressionTier,
     setSplitRangeInput,
     setOcrLanguage,
@@ -47,6 +172,8 @@ export const ConfigSidebar: React.FC = () => {
     setEditAnnotations,
     setFormFillOptions,
     setImageToPdfOptions,
+    setExcelToPdfOptions,
+    setHtmlToPdfOptions,
   } = useFileStore();
 
   if (!activeTool) return null;
@@ -561,16 +688,82 @@ export const ConfigSidebar: React.FC = () => {
         );
       case 'wordToPdf':
         return (
-          <div className="flex flex-col items-center justify-center p-12 text-center gap-4 opacity-60">
-            <Settings className="w-12 h-12 text-text-secondary" />
-            <p className="text-xs font-bold text-text-secondary uppercase tracking-widest">DOCX Layout Auto-Detected</p>
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <FilePenLine className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Document Layout</h3>
+            </div>
+            
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center">
+                <Settings className="w-8 h-8 text-brand-primary animate-pulse" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-black text-text-primary uppercase tracking-widest">Auto-Detection Active</p>
+                <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight">
+                  Our engine will automatically parse your DOCX structure, preserving margins, headings, and formatting.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-brand-primary/5 border border-brand-primary/10">
+              <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight italic">
+                Tip: Complex tables and nested layouts are optimized for standard A4 output.
+              </p>
+            </div>
           </div>
         );
       case 'powerPointToPdf':
         return (
-          <div className="flex flex-col items-center justify-center p-12 text-center gap-4 opacity-60">
-            <Settings className="w-12 h-12 text-text-secondary" />
-            <p className="text-xs font-bold text-text-secondary uppercase tracking-widest">Slides Render as Landscape Pages</p>
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Images className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">Slide Processing</h3>
+            </div>
+            
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass flex flex-col items-center text-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-brand-primary/10 flex items-center justify-center">
+                <Settings className="w-8 h-8 text-brand-primary animate-pulse" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs font-black text-text-primary uppercase tracking-widest">Landscape Rendering</p>
+                <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight">
+                  PPTX slides are extracted and compiled into high-resolution landscape PDF pages.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-brand-primary/5 border border-brand-primary/10">
+              <p className="text-[10px] text-text-secondary leading-relaxed uppercase tracking-tight italic">
+                Note: Each slide becomes a single page. Animations and transitions are flattened.
+              </p>
+            </div>
+          </div>
+        );
+      case 'excelToPdf':
+        return <ExcelConfig />;
+      case 'htmlToPdf':
+        return (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Settings className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">HTML Rendering</h3>
+            </div>
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass text-center">
+              <p className="text-xs font-black text-text-primary uppercase tracking-widest">Text and structure are auto-paginated</p>
+            </div>
+          </div>
+        );
+      case 'pdfToJpg':
+        return (
+          <div className="flex flex-col gap-6 animate-in fade-in slide-in-from-right-4 duration-300">
+            <div className="flex items-center gap-2 text-text-primary border-b border-border-glass pb-4">
+              <Settings className="w-5 h-5 text-brand-primary" />
+              <h3 className="font-outfit font-bold uppercase text-sm tracking-widest">JPG Export</h3>
+            </div>
+            <div className="p-6 rounded-2xl bg-bg-dark/40 border-2 border-border-glass text-center">
+              <p className="text-xs font-black text-text-primary uppercase tracking-widest">Every page exports at 150 DPI</p>
+            </div>
           </div>
         );
       case 'compress':

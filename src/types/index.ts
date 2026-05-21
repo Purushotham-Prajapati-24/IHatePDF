@@ -15,7 +15,10 @@ export type ToolType =
   | 'forms'
   | 'jpgToPdf'
   | 'wordToPdf'
-  | 'powerPointToPdf';
+  | 'powerPointToPdf'
+  | 'excelToPdf'
+  | 'htmlToPdf'
+  | 'pdfToJpg';
 
 export type PageNumberPosition = 'top-left' | 'top-center' | 'top-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
 

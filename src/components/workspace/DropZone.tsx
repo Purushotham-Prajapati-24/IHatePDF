@@ -121,6 +121,15 @@ function isAcceptedFile(file: File, activeTool: string | null): boolean {
       || name.endsWith('.pptx');
   }
 
+  if (activeTool === 'excelToPdf') {
+    return file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      || name.endsWith('.xlsx');
+  }
+
+  if (activeTool === 'htmlToPdf') {
+    return file.type === 'text/html' || name.endsWith('.html') || name.endsWith('.htm');
+  }
+
   return file.type === 'application/pdf' || name.endsWith('.pdf');
 }
 
@@ -128,6 +137,8 @@ function getAcceptedFileMessage(activeTool: string | null): string {
   if (activeTool === 'jpgToPdf') return 'Only JPG, JPEG, and PNG files are supported.';
   if (activeTool === 'wordToPdf') return 'Only DOCX files are supported.';
   if (activeTool === 'powerPointToPdf') return 'Only PPTX files are supported.';
+  if (activeTool === 'excelToPdf') return 'Only XLSX files are supported.';
+  if (activeTool === 'htmlToPdf') return 'Only HTML files are supported.';
   return 'Only PDF files are supported.';
 }
 
@@ -138,5 +149,7 @@ function getFallbackMimeType(file: File): string {
   if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
   if (name.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   if (name.endsWith('.pptx')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  if (name.endsWith('.xlsx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (name.endsWith('.html') || name.endsWith('.htm')) return 'text/html';
   return 'application/pdf';
 }

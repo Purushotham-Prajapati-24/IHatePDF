@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useFileStore } from '../useFileStore';
 import { FileMetadata } from '../../types';
-import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, fillPDFForm, imagesToPDF, mergePDFs, organizePDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from '../../services/pdfService';
+import { addPageNumbersPDF, addWatermarkPDF, compressPDF, cropPDF, editPDF, excelToPDF, fillPDFForm, htmlToPDF, imagesToPDF, mergePDFs, organizePDF, pdfToJpg, powerPointToPDF, repairPDF, rotatePDF, splitPDF, wordToPDF } from '../../services/pdfService';
 import { recognizePdfPages } from '../../services/ocrService';
 import { protectPdfWithPassword, unlockPdfWithPassword } from '../../services/qpdfService';
 
@@ -18,6 +18,10 @@ vi.mock('../../services/pdfService', () => ({
   fillPDFForm: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
   imagesToPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
   wordToPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  powerPointToPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  excelToPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  htmlToPDF: vi.fn(async () => new Uint8Array([37, 80, 68, 70]).buffer),
+  pdfToJpg: vi.fn(async () => new Uint8Array([0x50, 0x4b, 0x03, 0x04]).buffer),
   compressPDF: vi.fn(async () => new Uint8Array([37, 80]).buffer),
 }));
 
@@ -510,6 +514,90 @@ describe('useFileStore', () => {
     expect(wordToPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer));
     expect(useFileStore.getState().processedBlob?.type).toBe('application/pdf');
     expect(useFileStore.getState().processedFileName).toBe('resume-converted.pdf');
+  });
+
+  it('converts a PPTX file into a PDF output', async () => {
+    const pptxFile: FileMetadata = {
+      id: 'pptx',
+      name: 'deck.pptx',
+      size: 4,
+      type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      blob: new Blob([new Uint8Array([80, 75, 3, 4])], {
+        type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+      }),
+    };
+
+    useFileStore.getState().setActiveTool('powerPointToPdf');
+    useFileStore.getState().addFiles([pptxFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(powerPointToPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer));
+    expect(useFileStore.getState().processedBlob?.type).toBe('application/pdf');
+    expect(useFileStore.getState().processedFileName).toBe('deck-converted.pdf');
+  });
+
+  it('converts an XLSX file into a PDF output', async () => {
+    const xlsxFile: FileMetadata = {
+      id: 'xlsx',
+      name: 'invoice.xlsx',
+      size: 4,
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      blob: new Blob([new Uint8Array([80, 75, 3, 4])], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+    };
+
+    useFileStore.getState().setActiveTool('excelToPdf');
+    useFileStore.getState().addFiles([xlsxFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(excelToPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer), {
+      selectedSheets: [],
+      orientation: 'landscape',
+      pageSize: 'a4',
+    });
+    expect(useFileStore.getState().processedBlob?.type).toBe('application/pdf');
+    expect(useFileStore.getState().processedFileName).toBe('invoice-converted.pdf');
+  });
+
+  it('converts an HTML file into a PDF output', async () => {
+    const htmlFile: FileMetadata = {
+      id: 'html',
+      name: 'invoice.html',
+      size: 16,
+      type: 'text/html',
+      blob: new Blob(['<h1>Invoice</h1>'], { type: 'text/html' }),
+    };
+
+    useFileStore.getState().setActiveTool('htmlToPdf');
+    useFileStore.getState().addFiles([htmlFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(htmlToPDF).toHaveBeenCalledWith(expect.any(ArrayBuffer));
+    expect(useFileStore.getState().processedBlob?.type).toBe('application/pdf');
+    expect(useFileStore.getState().processedFileName).toBe('invoice-converted.pdf');
+  });
+
+  it('converts PDF pages into a JPG ZIP output', async () => {
+    const pdfFile: FileMetadata = {
+      id: 'pdf-to-jpg',
+      name: 'scan.pdf',
+      size: 4,
+      type: 'application/pdf',
+      blob: new Blob([new Uint8Array([37, 80, 68, 70])], { type: 'application/pdf' }),
+    };
+
+    useFileStore.getState().setActiveTool('pdfToJpg');
+    useFileStore.getState().addFiles([pdfFile]);
+
+    await useFileStore.getState().executeTool();
+
+    expect(pdfToJpg).toHaveBeenCalledWith(expect.any(ArrayBuffer), 'scan.pdf');
+    expect(useFileStore.getState().processedBlob?.type).toBe('application/zip');
+    expect(useFileStore.getState().processedFileName).toBe('scan-jpg.zip');
   });
 
   it('stores OCR output as a page-labeled text blob', async () => {

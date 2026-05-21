@@ -10,7 +10,16 @@ import {
   TaskLog
 } from '../types';
 import type { CompressionTier } from '../services/compressionOptions';
-import type { CropBox, ImageToPdfOptions, PageNumberOptions, PdfEditAnnotation, PdfFormFillOptions, WatermarkOptions } from '../services/pdfOperations';
+import type {
+  CropBox,
+  ExcelToPdfOptions,
+  HtmlToPdfOptions,
+  ImageToPdfOptions,
+  PageNumberOptions,
+  PdfEditAnnotation,
+  PdfFormFillOptions,
+  WatermarkOptions,
+} from '../services/pdfOperations';
 import { processActiveTool, validateToolRequest } from '../services/toolProcessor';
 import { saveFileToBuffer, saveTaskLog } from '../db/localDb';
 
@@ -36,6 +45,8 @@ interface FileState {
   editAnnotations: PdfEditAnnotation[];
   formFillOptions: PdfFormFillOptions;
   imageToPdfOptions: ImageToPdfOptions;
+  excelToPdfOptions: ExcelToPdfOptions;
+  htmlToPdfOptions: HtmlToPdfOptions;
   
   // --- Page Organizer Specific State ---
   selectedPages: SelectedPage[]; // Used for split or visual re-ordering grid
@@ -63,6 +74,8 @@ interface FileState {
   setEditAnnotations: (annotations: PdfEditAnnotation[]) => void;
   setFormFillOptions: (options: PdfFormFillOptions) => void;
   setImageToPdfOptions: (options: Partial<ImageToPdfOptions>) => void;
+  setExcelToPdfOptions: (options: Partial<ExcelToPdfOptions>) => void;
+  setHtmlToPdfOptions: (options: Partial<HtmlToPdfOptions>) => void;
   updateFileRotation: (id: string, rotation: number) => void;
   updateFilePreviews: (id: string, previewUrls: string[]) => void;
   reorderFiles: (startIndex: number, endIndex: number) => void;
@@ -162,6 +175,16 @@ export const useFileStore = create<FileState>()(
           orientation: 'portrait',
           margin: 0,
         },
+        excelToPdfOptions: {
+          selectedSheets: [],
+          orientation: 'landscape',
+          pageSize: 'a4',
+        },
+        htmlToPdfOptions: {
+          pageSize: 'a4',
+          orientation: 'portrait',
+          margin: 36,
+        },
         selectedPages: [],
         donationStats: {
           totalTasksCompleted: 0,
@@ -231,6 +254,12 @@ export const useFileStore = create<FileState>()(
         }),
         setImageToPdfOptions: (options) => set((state) => {
           state.imageToPdfOptions = { ...state.imageToPdfOptions, ...options };
+        }),
+        setExcelToPdfOptions: (options) => set((state) => {
+          state.excelToPdfOptions = { ...state.excelToPdfOptions, ...options };
+        }),
+        setHtmlToPdfOptions: (options) => set((state) => {
+          state.htmlToPdfOptions = { ...state.htmlToPdfOptions, ...options };
         }),
         updateFileRotation: (id, rotation) => set((state) => {
           const file = state.files.find((f) => f.id === id);
@@ -302,6 +331,8 @@ export const useFileStore = create<FileState>()(
             editAnnotations: snapshot.editAnnotations,
             formFillOptions: snapshot.formFillOptions,
             imageToPdfOptions: snapshot.imageToPdfOptions,
+            excelToPdfOptions: snapshot.excelToPdfOptions,
+            htmlToPdfOptions: snapshot.htmlToPdfOptions,
           };
 
           try {
@@ -360,6 +391,8 @@ export const useFileStore = create<FileState>()(
                 editAnnotations: get().editAnnotations,
                 formFillOptions: get().formFillOptions,
                 imageToPdfOptions: get().imageToPdfOptions,
+                excelToPdfOptions: get().excelToPdfOptions,
+                htmlToPdfOptions: get().htmlToPdfOptions,
               },
             });
 

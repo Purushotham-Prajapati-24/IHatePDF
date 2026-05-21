@@ -1,8 +1,21 @@
 import { workerPool } from './workerPool';
 import type { CompressionTier } from './compressionOptions';
-import type { CropBox, ImageToPdfInput, ImageToPdfOptions, OrganizePageRequest, PageNumberOptions, PdfEditAnnotation, PdfFormFillOptions, WatermarkOptions } from './pdfOperations';
+import type {
+  CropBox,
+  ExcelToPdfOptions,
+  ImageToPdfInput,
+  ImageToPdfOptions,
+  OrganizePageRequest,
+  PageNumberOptions,
+  PdfEditAnnotation,
+  PdfFormFillOptions,
+  WatermarkOptions,
+} from './pdfOperations';
 import { convertWordToPdf } from './wordToPdfService';
 import { convertPowerPointToPdf } from './powerPointToPdfService';
+import { convertExcelToPdf, getExcelSheets } from './excelToPdfService';
+import { convertHtmlToPdf } from './htmlToPdfService';
+import { convertPdfToJpgArchive } from './pdfToJpgService';
 
 export interface SplitRange {
   start: number;
@@ -60,6 +73,22 @@ export function wordToPDF(file: ArrayBuffer): Promise<ArrayBuffer> {
 
 export function powerPointToPDF(file: ArrayBuffer): Promise<ArrayBuffer> {
   return convertPowerPointToPdf(file);
+}
+
+export function excelToPDF(file: ArrayBuffer, options?: ExcelToPdfOptions): Promise<ArrayBuffer> {
+  return convertExcelToPdf(file, options);
+}
+
+export function getExcelSheetNames(file: ArrayBuffer): Promise<string[]> {
+  return getExcelSheets(file);
+}
+
+export function htmlToPDF(file: ArrayBuffer): Promise<ArrayBuffer> {
+  return convertHtmlToPdf(file);
+}
+
+export function pdfToJpg(file: ArrayBuffer, fileName: string): Promise<ArrayBuffer> {
+  return convertPdfToJpgArchive(file, fileName);
 }
 
 export function compressPDF(file: ArrayBuffer, tier: CompressionTier = 'recommended'): Promise<ArrayBuffer> {

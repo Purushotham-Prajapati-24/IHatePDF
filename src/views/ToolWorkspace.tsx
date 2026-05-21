@@ -16,7 +16,7 @@ export const ToolWorkspace: React.FC = () => {
   const errorMessage = useFileStore((state) => state.errorMessage);
   const isProcessing = status === 'reading' || status === 'processing';
 
-  const validTools: ToolType[] = ['merge', 'split', 'compress', 'rotate', 'ocr', 'organize', 'protect', 'unlock', 'repair', 'addPageNumbers', 'addWatermark', 'crop', 'edit', 'forms', 'jpgToPdf', 'wordToPdf', 'powerPointToPdf'];
+  const validTools: ToolType[] = ['merge', 'split', 'compress', 'rotate', 'ocr', 'organize', 'protect', 'unlock', 'repair', 'addPageNumbers', 'addWatermark', 'crop', 'edit', 'forms', 'jpgToPdf', 'wordToPdf', 'powerPointToPdf', 'excelToPdf', 'htmlToPdf', 'pdfToJpg'];
 
   useEffect(() => {
     if (toolId && validTools.includes(toolId as ToolType)) {
