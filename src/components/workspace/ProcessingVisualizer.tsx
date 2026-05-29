@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { Cpu, FileText, Gauge, ShieldCheck } from 'lucide-react';
 import { useFileStore } from '../../store/useFileStore';
+import { getEngineLabel, getPreferredEngine } from '../../services/conversionGateway';
 
 const LOCAL_PROCESSING_STEPS = [
   'Reading file buffers locally...',
@@ -10,7 +11,7 @@ const LOCAL_PROCESSING_STEPS = [
 ];
 
 export const ProcessingVisualizer: React.FC = () => {
-  const { status, progress, activeTool } = useFileStore();
+  const { status, progress, activeTool, conversionMode } = useFileStore();
   const prefersReducedMotion = useReducedMotion();
   const [activeStep, setActiveStep] = useState(0);
 
@@ -59,6 +60,9 @@ export const ProcessingVisualizer: React.FC = () => {
 
   const StatusIcon = statusConfig.icon;
   const currentCopy = LOCAL_PROCESSING_STEPS[activeStep];
+  const engineCopy = activeTool && isConversionTool(activeTool) && conversionMode
+    ? getEngineLabel(getPreferredEngine(activeTool, conversionMode))
+    : 'Zero-server local execution';
   const ringBackground = `conic-gradient(hsl(354, 76%, 49%) ${clampedProgress * 3.6}deg, rgba(255,255,255,0.08) 0deg)`;
 
   return (
@@ -81,7 +85,7 @@ export const ProcessingVisualizer: React.FC = () => {
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border-glass bg-white/[0.04] px-4 py-2">
             <ShieldCheck className="h-4 w-4 text-brand-primary" />
             <span className="text-[10px] font-black uppercase tracking-[0.24em] text-text-secondary">
-              Zero-server local execution
+              {engineCopy}
             </span>
           </div>
 
@@ -150,3 +154,16 @@ export const ProcessingVisualizer: React.FC = () => {
     </div>
   );
 };
+
+function isConversionTool(tool: string): boolean {
+  return [
+    'wordToPdf',
+    'powerPointToPdf',
+    'excelToPdf',
+    'htmlToPdf',
+    'pdfToJpg',
+    'pdfToWord',
+    'pdfToPowerPoint',
+    'pdfToExcel',
+  ].includes(tool);
+}

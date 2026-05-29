@@ -69,6 +69,8 @@ const baseConfig: ToolExecutionConfig = {
     includeImages: true,
     fontFace: 'Arial',
   },
+  conversionMode: 'local-only',
+  conversionServiceConfirmed: false,
 };
 
 const pdfFile: FileMetadata = {
@@ -207,6 +209,14 @@ describe('toolProcessor validation', () => {
       files: [docxFile],
       config: baseConfig,
     })).not.toThrow();
+  });
+
+  it('requires an explicit conversion mode for conversion tools', () => {
+    expect(() => validateToolRequest({
+      activeTool: 'wordToPdf',
+      files: [docxFile],
+      config: { ...baseConfig, conversionMode: null },
+    })).toThrow('Choose High fidelity');
   });
 
   it('rejects non-DOCX files for Word to PDF', () => {

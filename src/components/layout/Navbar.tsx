@@ -2,12 +2,7 @@ import React from 'react';
 import { useFileStore } from '../../store/useFileStore';
 import { Link } from 'react-router-dom';
 import { Moon, Sun, ShieldCheck, BarChart3, History as HistoryIcon } from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../../utils/cn';
 
 export const Navbar: React.FC = () => {
   const { theme, setTheme } = useFileStore();

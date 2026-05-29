@@ -9,6 +9,7 @@ import {
   formatBytes,
   formatDuration,
 } from '../services/historyMetrics';
+import { DashboardSkeleton } from '../components/ui/Skeletons';
 
 const ACTIVITY_COLORS = [
   'hsl(220, 15%, 18%)',
@@ -56,6 +57,10 @@ export const Dashboard: React.FC = () => {
 
   const metrics = useMemo(() => aggregateHistoryMetrics(logs), [logs]);
   const activityDays = useMemo(() => buildActivityDays(logs), [logs]);
+
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
 
   const metricCards = [
     {

@@ -24,6 +24,7 @@ import type {
 } from '../services/pdfOperations';
 import { processActiveTool, validateToolRequest } from '../services/toolProcessor';
 import { saveFileToBuffer, saveTaskLog } from '../db/localDb';
+import type { ConversionEngine, ConversionMode } from '../services/conversionGateway';
 
 interface FileState {
   // --- Active Files & Queue State ---
@@ -35,7 +36,10 @@ interface FileState {
   processedBlob: Blob | null;
   processedFileName: string | null;
   processedNotice: string | null;
+  processedEngine: ConversionEngine | null;
   compressionTier: CompressionTier;
+  conversionMode: ConversionMode | null;
+  conversionServiceConfirmed: boolean;
   splitRangeInput: string;
   ocrLanguage: string;
   protectPassword: string;
@@ -66,6 +70,8 @@ interface FileState {
   clearQueue: () => void;
   setActiveTool: (tool: ToolType | null) => void;
   setCompressionTier: (tier: CompressionTier) => void;
+  setConversionMode: (mode: ConversionMode) => void;
+  setConversionServiceConfirmed: (confirmed: boolean) => void;
   setSplitRangeInput: (rangeInput: string) => void;
   setOcrLanguage: (language: string) => void;
   setProtectPassword: (password: string) => void;
@@ -128,7 +134,10 @@ export const useFileStore = create<FileState>()(
         processedBlob: null,
         processedFileName: null,
         processedNotice: null,
+        processedEngine: null,
         compressionTier: 'recommended',
+  conversionMode: null,
+        conversionServiceConfirmed: false,
         splitRangeInput: '',
         ocrLanguage: 'eng',
         protectPassword: '',
@@ -224,12 +233,20 @@ export const useFileStore = create<FileState>()(
           state.processedBlob = null;
           state.processedFileName = null;
           state.processedNotice = null;
+          state.processedEngine = null;
         }),
         setActiveTool: (tool) => set((state) => {
           state.activeTool = tool;
         }),
         setCompressionTier: (tier) => set((state) => {
           state.compressionTier = tier;
+        }),
+        setConversionMode: (mode) => set((state) => {
+          state.conversionMode = mode;
+          state.conversionServiceConfirmed = mode === 'local-only' ? false : state.conversionServiceConfirmed;
+        }),
+        setConversionServiceConfirmed: (confirmed) => set((state) => {
+          state.conversionServiceConfirmed = confirmed;
         }),
         setSplitRangeInput: (rangeInput) => set((state) => {
           state.splitRangeInput = rangeInput;
@@ -347,6 +364,8 @@ export const useFileStore = create<FileState>()(
             excelToPdfOptions: snapshot.excelToPdfOptions,
             htmlToPdfOptions: snapshot.htmlToPdfOptions,
             pdfToPowerPointOptions: snapshot.pdfToPowerPointOptions,
+            conversionMode: snapshot.conversionMode,
+            conversionServiceConfirmed: snapshot.conversionServiceConfirmed,
           };
 
           try {
@@ -362,6 +381,7 @@ export const useFileStore = create<FileState>()(
               state.processedBlob = null;
               state.processedFileName = null;
               state.processedNotice = null;
+              state.processedEngine = null;
             });
             return;
           }
@@ -374,6 +394,7 @@ export const useFileStore = create<FileState>()(
               state.processedBlob = null;
               state.processedFileName = null;
               state.processedNotice = null;
+              state.processedEngine = null;
             });
 
             const startTime = Date.now();
@@ -387,7 +408,7 @@ export const useFileStore = create<FileState>()(
               state.progress = 55;
             });
 
-            const { outputBuffer, outputFileName, outputMimeType, notice } = await processActiveTool({
+            const { outputBuffer, outputFileName, outputMimeType, notice, engine } = await processActiveTool({
               activeTool: get().activeTool,
               files,
               buffers,
@@ -408,6 +429,8 @@ export const useFileStore = create<FileState>()(
                 excelToPdfOptions: get().excelToPdfOptions,
                 htmlToPdfOptions: get().htmlToPdfOptions,
                 pdfToPowerPointOptions: get().pdfToPowerPointOptions,
+                conversionMode: get().conversionMode,
+                conversionServiceConfirmed: get().conversionServiceConfirmed,
               },
             });
 
@@ -457,6 +480,7 @@ export const useFileStore = create<FileState>()(
               state.processedBlob = processedBlob;
               state.processedFileName = outputFileName;
               state.processedNotice = notice ?? null;
+              state.processedEngine = engine ?? null;
             });
           } catch (error) {
             set((state) => {
@@ -466,6 +490,7 @@ export const useFileStore = create<FileState>()(
               state.processedBlob = null;
               state.processedFileName = null;
               state.processedNotice = null;
+              state.processedEngine = null;
             });
           }
         },

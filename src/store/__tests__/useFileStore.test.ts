@@ -531,6 +531,7 @@ describe('useFileStore', () => {
     };
 
     useFileStore.getState().setActiveTool('wordToPdf');
+    useFileStore.getState().setConversionMode('local-only');
     useFileStore.getState().addFiles([docxFile]);
 
     await useFileStore.getState().executeTool();
@@ -552,6 +553,7 @@ describe('useFileStore', () => {
     };
 
     useFileStore.getState().setActiveTool('powerPointToPdf');
+    useFileStore.getState().setConversionMode('local-only');
     useFileStore.getState().addFiles([pptxFile]);
 
     await useFileStore.getState().executeTool();
@@ -573,6 +575,7 @@ describe('useFileStore', () => {
     };
 
     useFileStore.getState().setActiveTool('excelToPdf');
+    useFileStore.getState().setConversionMode('local-only');
     useFileStore.getState().addFiles([xlsxFile]);
 
     await useFileStore.getState().executeTool();
@@ -596,6 +599,7 @@ describe('useFileStore', () => {
     };
 
     useFileStore.getState().setActiveTool('htmlToPdf');
+    useFileStore.getState().setConversionMode('local-only');
     useFileStore.getState().addFiles([htmlFile]);
 
     await useFileStore.getState().executeTool();
@@ -615,6 +619,7 @@ describe('useFileStore', () => {
     };
 
     useFileStore.getState().setActiveTool('pdfToJpg');
+    useFileStore.getState().setConversionMode('local-only');
     useFileStore.getState().addFiles([pdfFile]);
 
     await useFileStore.getState().executeTool();
@@ -634,6 +639,7 @@ describe('useFileStore', () => {
     };
 
     useFileStore.getState().setActiveTool('pdfToWord');
+    useFileStore.getState().setConversionMode('local-only');
     useFileStore.getState().addFiles([pdfFile]);
 
     await useFileStore.getState().executeTool();
@@ -653,6 +659,7 @@ describe('useFileStore', () => {
     };
 
     useFileStore.getState().setActiveTool('pdfToPowerPoint');
+    useFileStore.getState().setConversionMode('local-only');
     useFileStore.getState().addFiles([pdfFile]);
 
     await useFileStore.getState().executeTool();
@@ -676,6 +683,7 @@ describe('useFileStore', () => {
     };
 
     useFileStore.getState().setActiveTool('pdfToExcel');
+    useFileStore.getState().setConversionMode('local-only');
     useFileStore.getState().addFiles([pdfFile]);
 
     await useFileStore.getState().executeTool();

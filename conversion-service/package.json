@@ -1,0 +1,15 @@
+{
+  "name": "ihatepdf-conversion-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.mjs",
+    "test": "node --test test/*.node-test.mjs",
+    "verify:docker": "node test/docker-verification.mjs"
+  },
+  "dependencies": {
+    "busboy": "^1.6.0",
+    "docx": "^9.6.1"
+  }
+}

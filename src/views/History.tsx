@@ -6,6 +6,7 @@ import { useFileStore } from '../store/useFileStore';
 import { filterFileBufferRecords, sortFileBufferRecords } from '../services/fileBufferHistory';
 import { formatBytes } from '../services/historyMetrics';
 import { downloadBlob } from '../utils/downloadBlob';
+import { HistorySkeleton } from '../components/ui/Skeletons';
 
 export const History: React.FC = () => {
   const navigate = useNavigate();
@@ -39,6 +40,10 @@ export const History: React.FC = () => {
   useEffect(() => {
     void loadFileBuffer();
   }, []);
+
+  if (isLoading) {
+    return <HistorySkeleton />;
+  }
 
   async function deleteRecord(id: string) {
     const db = await initDB();

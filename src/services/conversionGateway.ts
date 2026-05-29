@@ -1,7 +1,8 @@
 import type { ToolType } from '../types';
 
 export type ConversionMode = 'high-fidelity' | 'editable' | 'local-only';
-export type ConversionEngine = 'browser' | 'collabora' | 'chromium' | 'docling' | 'pdfium' | 'tesseract';
+export type ConversionEngine = 'browser' | 'libreoffice' | 'chromium' | 'docling' | 'pdfium' | 'tesseract';
+export type FallbackPolicy = 'none' | 'browser';
 
 export interface ConversionRequest {
   sourceMimeType: string;
@@ -19,6 +20,9 @@ export interface ConversionResult {
   mimeType: string;
   engine: ConversionEngine;
   warnings: string[];
+  durationMs: number;
+  fallbackUsed: boolean;
+  pageCount?: number;
 }
 
 export interface LocalConversionResult {
@@ -41,7 +45,7 @@ export function getPreferredEngine(tool: ToolType, mode: ConversionMode): Conver
     case 'wordToPdf':
     case 'powerPointToPdf':
     case 'excelToPdf':
-      return 'collabora';
+      return 'libreoffice';
     case 'htmlToPdf':
       return 'chromium';
     case 'pdfToJpg':
@@ -61,14 +65,14 @@ export function getEngineLabel(engine: ConversionEngine): string {
   switch (engine) {
     case 'browser':
       return 'Processed locally';
-    case 'collabora':
-      return 'Processed with Collabora';
+    case 'libreoffice':
+      return 'Processed with LibreOffice headless';
     case 'chromium':
       return 'Processed with Chromium';
     case 'docling':
       return 'Processed with Docling';
     case 'pdfium':
-      return 'Processed with PDFium';
+      return 'Processed with PDF rasterizer';
     case 'tesseract':
       return 'Processed with Tesseract';
   }
@@ -78,35 +82,34 @@ export async function convertWithGateway(
   request: ConversionRequest,
   runLocalFallback: () => Promise<LocalConversionResult>,
 ): Promise<ConversionResult> {
+  const startedAt = performance.now();
   const preferredEngine = getPreferredEngine(request.tool, request.mode);
+  const fallbackPolicy: FallbackPolicy = request.mode === 'local-only' || preferredEngine === 'browser'
+    ? 'browser'
+    : 'none';
 
-  if (request.mode === 'local-only' || preferredEngine === 'browser') {
+  if (fallbackPolicy === 'browser') {
     return createLocalResult(await runLocalFallback(), [
       ...localModeWarnings(request.tool, request.mode),
-    ]);
+    ], performance.now() - startedAt, true);
   }
 
   if (!SERVICE_URL) {
-    return createLocalResult(await runLocalFallback(), [
-      `${getEngineLabel(preferredEngine)} requires a configured self-hosted conversion service; browser fallback was used.`,
-      ...localModeWarnings(request.tool, 'local-only'),
-    ]);
+    throw new Error(`${getEngineLabel(preferredEngine)} requires VITE_CONVERSION_SERVICE_URL. Choose Local-only to run the lower-fidelity browser converter.`);
   }
 
   try {
-    return await runRemoteConversion(request, preferredEngine);
+    return await runRemoteConversion(request, preferredEngine, startedAt);
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'The conversion service did not return a usable output.';
-    return createLocalResult(await runLocalFallback(), [
-      `${getEngineLabel(preferredEngine)} failed: ${reason}`,
-      'Browser fallback was used, so complex layout, fonts, charts, tables, or scanned content may not be preserved.',
-    ]);
+    throw new Error(`${getEngineLabel(preferredEngine)} failed: ${reason}. Choose Local-only to run the lower-fidelity browser converter.`);
   }
 }
 
 async function runRemoteConversion(
   request: ConversionRequest,
   expectedEngine: ConversionEngine,
+  startedAt: number,
 ): Promise<ConversionResult> {
   const body = new FormData();
   body.append('file', request.file, request.fileName);
@@ -114,6 +117,7 @@ async function runRemoteConversion(
     sourceMimeType: request.sourceMimeType,
     targetMimeType: request.targetMimeType,
     mode: request.mode,
+    fileName: request.fileName,
     tool: request.tool,
     options: request.options,
   }));
@@ -131,6 +135,9 @@ async function runRemoteConversion(
   const fileName = response.headers.get('x-conversion-filename') || createConvertedName(request.fileName, mimeType);
   const engine = parseEngine(response.headers.get('x-conversion-engine')) ?? expectedEngine;
   const warnings = parseWarnings(response.headers.get('x-conversion-warnings'));
+  const durationMs = parsePositiveNumber(response.headers.get('x-conversion-duration-ms'))
+    ?? (performance.now() - startedAt);
+  const pageCount = parsePositiveNumber(response.headers.get('x-conversion-page-count'));
 
   return {
     blob: await response.blob(),
@@ -138,6 +145,9 @@ async function runRemoteConversion(
     mimeType,
     engine,
     warnings,
+    durationMs,
+    fallbackUsed: false,
+    pageCount,
   };
 }
 
@@ -150,13 +160,15 @@ async function readErrorMessage(response: Response): Promise<string> {
   }
 }
 
-function createLocalResult(result: LocalConversionResult, warnings: string[]): ConversionResult {
+function createLocalResult(result: LocalConversionResult, warnings: string[], durationMs: number, fallbackUsed: boolean): ConversionResult {
   return {
     blob: new Blob([result.buffer], { type: result.mimeType }),
     fileName: result.fileName,
     mimeType: result.mimeType,
     engine: 'browser',
     warnings: [...warnings, ...(result.warnings ?? [])],
+    durationMs,
+    fallbackUsed,
   };
 }
 
@@ -184,9 +196,15 @@ function localModeWarnings(tool: ToolType, mode: ConversionMode): string[] {
 
 function parseEngine(value: string | null): ConversionEngine | null {
   if (!value) return null;
-  return ['browser', 'collabora', 'chromium', 'docling', 'pdfium', 'tesseract'].includes(value)
+  return ['browser', 'libreoffice', 'chromium', 'docling', 'pdfium', 'tesseract'].includes(value)
     ? value as ConversionEngine
     : null;
+}
+
+function parsePositiveNumber(value: string | null): number | undefined {
+  if (!value) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
 }
 
 function parseWarnings(value: string | null): string[] {

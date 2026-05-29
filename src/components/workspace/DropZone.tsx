@@ -3,7 +3,7 @@ import { useFileStore } from '../../store/useFileStore';
 import { FileMetadata } from '../../types';
 import { toast } from 'sonner';
 import { UploadCloud } from 'lucide-react';
-import { cn } from '../layout/Navbar';
+import { cn } from '../../utils/cn';
 
 export const DropZone: React.FC = () => {
   const [isDragging, setIsDragging] = useState(false);

@@ -35,7 +35,7 @@ export interface ToolExecutionConfig {
   excelToPdfOptions: ExcelToPdfOptions;
   htmlToPdfOptions: HtmlToPdfOptions;
   pdfToPowerPointOptions: PdfToPowerPointOptions;
-  conversionMode?: ConversionMode;
+  conversionMode?: ConversionMode | null;
   conversionServiceConfirmed?: boolean;
 }
 
@@ -242,6 +242,14 @@ export function validateToolRequest(request: Pick<ToolExecutionRequest, 'activeT
     throw new Error('Add at least one file before starting local processing.');
   }
 
+  if (isConversionTool(activeTool) && !config.conversionMode) {
+    throw new Error('Choose High fidelity, Editable, or Local-only conversion before starting.');
+  }
+
+  if (requiresServicePrivacyConfirmation(activeTool, config)) {
+    throw new Error('Confirm self-hosted conversion processing before using high-fidelity mode.');
+  }
+
   if (activeTool === 'jpgToPdf') {
     assertImageFiles(files);
     return;
@@ -296,9 +304,6 @@ export function validateToolRequest(request: Pick<ToolExecutionRequest, 'activeT
     assertWatermarkConfig(config.watermarkOptions);
   }
 
-  if (requiresServicePrivacyConfirmation(activeTool, config)) {
-    throw new Error('Confirm self-hosted conversion processing before using high-fidelity mode.');
-  }
 }
 
 async function runGatewayConversion(
@@ -311,7 +316,7 @@ async function runGatewayConversion(
   const result = await convertWithGateway({
     sourceMimeType: primaryFile.type || inferSourceMimeType(primaryFile.name),
     targetMimeType,
-    mode: request.config.conversionMode ?? 'local-only',
+    mode: request.config.conversionMode ?? failMissingConversionMode(),
     fileName: primaryFile.name,
     file: new Blob([primaryBuffer], { type: primaryFile.type || inferSourceMimeType(primaryFile.name) }),
     options: createGatewayOptions(request),
@@ -324,7 +329,7 @@ async function runGatewayConversion(
     outputFileName: result.fileName,
     outputMimeType: result.mimeType,
     engine: result.engine,
-    notice: createConversionNotice(result.engine, result.warnings),
+    notice: createConversionNotice(result),
   };
 }
 
@@ -336,19 +341,30 @@ function createGatewayOptions(request: ToolExecutionRequest): Record<string, unk
   };
 }
 
-function createConversionNotice(engine: ConversionEngine, warnings: string[]): string | undefined {
-  const details = warnings.filter(Boolean);
-  const label = getEngineLabel(engine);
+function createConversionNotice(result: { engine: ConversionEngine; warnings: string[]; durationMs?: number; fallbackUsed?: boolean; pageCount?: number }): string | undefined {
+  const details = result.warnings.filter(Boolean);
+  const label = getEngineLabel(result.engine);
+  const metadata = [
+    typeof result.durationMs === 'number' ? `${Math.round(result.durationMs)}ms` : null,
+    typeof result.pageCount === 'number' ? `${result.pageCount} page${result.pageCount === 1 ? '' : 's'}` : null,
+    result.fallbackUsed ? 'browser fallback used' : null,
+  ].filter(Boolean).join(' | ');
 
-  if (details.length === 0) return label;
-  return `${label}. ${details.join(' ')}`;
+  const prefix = metadata ? `${label} (${metadata})` : label;
+  if (details.length === 0) return prefix;
+  return `${prefix}. ${details.join(' ')}`;
 }
 
 function requiresServicePrivacyConfirmation(activeTool: ToolType, config: ToolExecutionConfig): boolean {
   return isConversionTool(activeTool)
     && isConversionServiceConfigured()
     && config.conversionMode !== 'local-only'
+    && Boolean(config.conversionMode)
     && config.conversionServiceConfirmed !== true;
+}
+
+function failMissingConversionMode(): never {
+  throw new Error('Choose High fidelity, Editable, or Local-only conversion before starting.');
 }
 
 function isConversionTool(tool: ToolType): boolean {
@@ -546,6 +562,16 @@ function isHtmlFile(file: FileMetadata): boolean {
 
 function isSupportedImageFile(file: FileMetadata): boolean {
   return getImageMimeType(file) !== null;
+}
+
+function inferSourceMimeType(fileName: string): string {
+  const name = fileName.toLowerCase();
+  if (name.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (name.endsWith('.pptx')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+  if (name.endsWith('.xlsx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+  if (name.endsWith('.html') || name.endsWith('.htm')) return 'text/html';
+  if (name.endsWith('.pdf')) return 'application/pdf';
+  return 'application/octet-stream';
 }
 
 function getImageMimeType(file: FileMetadata): ImageToPdfInput['mimeType'] | null {

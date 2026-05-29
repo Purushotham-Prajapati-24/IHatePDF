@@ -1,5 +1,5 @@
 import React from 'react';
-import { Heart, Github, Twitter, Shield, Zap, Lock } from 'lucide-react';
+import { Heart, Github, Twitter, Shield, Zap, Lock, Linkedin, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const Footer: React.FC = () => {
@@ -13,7 +13,7 @@ export const Footer: React.FC = () => {
               IHate<span className="text-brand-primary">PDF</span>
             </span>
             <p className="text-sm text-text-secondary leading-relaxed">
-              The ultimate 100% private iLovePDF alternative. We process your documents directly in your browser using local WASM engines. No uploads, no servers, zero risk.
+              The ultimate 100% private choice for PDF processing. We process your documents directly in your browser using local WASM engines. No uploads, no servers, zero risk.
             </p>
             <div className="flex gap-4 mt-2">
               <Shield className="w-5 h-5 text-brand-primary" />
@@ -46,28 +46,41 @@ export const Footer: React.FC = () => {
             </nav>
           </div>
 
-          {/* Security Column */}
+          {/* Contact Column */}
           <div className="flex flex-col gap-4">
-            <h4 className="font-outfit font-bold text-sm uppercase tracking-widest text-text-primary">Security & OCR</h4>
-            <nav className="flex flex-col gap-2">
-              <Link to="/tool/ocr" className="text-sm text-text-secondary hover:text-brand-primary transition-colors">OCR PDF</Link>
-              <Link to="/tool/protect" className="text-sm text-text-secondary hover:text-brand-primary transition-colors">Protect PDF</Link>
-              <Link to="/tool/unlock" className="text-sm text-text-secondary hover:text-brand-primary transition-colors">Unlock PDF</Link>
-              <Link to="/tool/repair" className="text-sm text-text-secondary hover:text-brand-primary transition-colors">Repair PDF</Link>
-              <Link to="/tool/forms" className="text-sm text-text-secondary hover:text-brand-primary transition-colors">PDF Forms</Link>
+            <h4 className="font-outfit font-bold text-sm uppercase tracking-widest text-text-primary">Connect</h4>
+            <nav className="flex flex-col gap-3">
+              <a 
+                href="https://github.com/Purushotham-Prajapati-24" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-text-secondary hover:text-brand-primary transition-colors"
+              >
+                <Github className="w-4 h-4" />
+                <span>GitHub</span>
+              </a>
+              <a 
+                href="https://www.linkedin.com/in/purushotham-prajapati-4785b031b/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-sm text-text-secondary hover:text-brand-primary transition-colors"
+              >
+                <Linkedin className="w-4 h-4" />
+                <span>LinkedIn</span>
+              </a>
+              <a 
+                href="mailto:purushothamprajapati7473@gmail.com"
+                className="flex items-center gap-2 text-sm text-text-secondary hover:text-brand-primary transition-colors"
+              >
+                <Mail className="w-4 h-4" />
+                <span>Email Support</span>
+              </a>
             </nav>
           </div>
         </div>
 
         <div className="border-t border-border-glass pt-8 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-6">
-            <a
-              href="#"
-              className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
-            >
-              <Github className="w-4 h-4" />
-              <span>GitHub</span>
-            </a>
             <a
               href="#"
               className="flex items-center gap-2 text-sm text-text-secondary hover:text-text-primary transition-colors"
@@ -80,7 +93,7 @@ export const Footer: React.FC = () => {
           <div className="flex items-center gap-2 text-sm text-text-secondary">
             <span>Made with</span>
             <Heart className="w-4 h-4 text-brand-primary animate-pulse" />
-            <span>for Digital Sovereignty & Privacy</span>
+            <span>by Purushotham Prajapati</span>
           </div>
 
           <div className="text-xs text-text-secondary/60 uppercase font-black tracking-widest">
